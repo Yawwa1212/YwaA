@@ -1,29 +1,135 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YwwA</title>
-  <style>
-    body {
-      margin: 0;
-      background-color: #000;
-      color: #00aaff;
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      height: 100vh;
-    }
-    h1 {
-      margin-top: 60px;
-      font-size: 3em;
-      font-weight: bold;
-      color: #00aaff;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>MU.app (無) – 감정 삭제기</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            padding: 20px;
+            text-align: center;
+            background-color: #000;
+            font-size: 24px;
+            color: #666;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #1a1a1a;
+            padding: 10px;
+        }
+        nav button {
+            background: #222;
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        section {
+            display: none;
+            padding: 30px;
+            text-align: center;
+        }
+        .emotion, .sound-btn {
+            padding: 12px 24px;
+            background: #222;
+            border: 1px solid #444;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .emotion:hover, .sound-btn:hover {
+            background: #333;
+        }
+        textarea {
+            width: 80%;
+            height: 150px;
+            background-color: #222;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 10px;
+            font-family: monospace;
+            margin-top: 20px;
+        }
+        #selfie-placeholder {
+            margin-top: 40px;
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
-  <h1>YwwA</h1>
+    <header>MU.app (無)</header>
+    <nav>
+        <button onclick="showSection('eraser')">감정 삭제</button>
+        <button onclick="showSection('mulog')">무일기</button>
+        <button onclick="showSection('silence')">정적 듣기</button>
+        <button onclick="showSection('selfie')">무표정 셀카</button>
+    </nav>
+
+    <section id="eraser">
+        <h2>감정을 선택하세요</h2>
+        <div class="emotion" onclick="eraseEmotion('사랑')">사랑</div>
+        <div class="emotion" onclick="eraseEmotion('분노')">분노</div>
+        <div class="emotion" onclick="eraseEmotion('후회')">후회</div>
+        <div class="emotion" onclick="eraseEmotion('외로움')">외로움</div>
+        <div class="emotion" onclick="eraseEmotion('기쁨')">기쁨</div>
+        <div id="erase-result" style="margin-top: 20px; color: #666;"></div>
+    </section>
+
+    <section id="mulog">
+        <h2>아무 것도 남기지 않는 일기</h2>
+        <textarea id="mu-diary" placeholder="여기에 감정 없는 글을 적어보세요... (5분 후 자동 삭제)"></textarea>
+        <div style="margin-top: 20px; color: #555;">* 이 기록은 저장되지 않으며, 일정 시간이 지나면 사라집니다.</div>
+    </section>
+
+    <section id="silence">
+        <h2>정적 재생</h2>
+        <button class="sound-btn" onclick="playSilence()">백색소음 재생</button>
+        <button class="sound-btn" onclick="stopSilence()">정지</button>
+        <audio id="silence-audio" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3" type="audio/mpeg">
+            브라우저가 오디오를 지원하지 않습니다.
+        </audio>
+    </section>
+
+    <section id="selfie">
+        <h2>무표정 셀카 (준비 중)</h2>
+        <div id="selfie-placeholder">* 이 기능은 모바일 브라우저에서만 지원됩니다. 현재는 준비 중입니다.</div>
+    </section>
+
+    <script>
+        function showSection(id) {
+            document.querySelectorAll("section").forEach(sec => sec.style.display = "none");
+            document.getElementById(id).style.display = "block";
+        }
+
+        function eraseEmotion(emotion) {
+            const result = document.getElementById("erase-result");
+            result.innerHTML = "'" + emotion + "'을(를) 삭제 중...";
+            setTimeout(() => {
+                result.innerHTML = "삭제 완료.";
+            }, 2000);
+        }
+
+        function playSilence() {
+            document.getElementById("silence-audio").play();
+        }
+
+        function stopSilence() {
+            document.getElementById("silence-audio").pause();
+            document.getElementById("silence-audio").currentTime = 0;
+        }
+
+        // 기본 화면
+        showSection('eraser');
+    </script>
 </body>
 </html>
