@@ -1,0 +1,52 @@
+# Generate a large list of structured events with types: choice, combat, or shelter
+
+import random
+import json
+
+event_types = ["choice", "combat", "shelter"]
+themes = ["성당", "폐허가 된 상점", "무너진 벙커", "숲", "지하실", "공장 폐허", "눈 덮인 들판"]
+moods = ["불안", "고요", "광기", "절망", "기대", "기억", "고통"]
+
+events = []
+
+for i in range(60):  # 60 base events to multiply dynamically
+    event_type = random.choices(event_types, weights=[0.6, 0.3, 0.1])[0]
+    place = random.choice(themes)
+    mood = random.choice(moods)
+    base_text = f"{place} 안은 {mood}에 잠겨 있다."
+
+    if event_type == "choice":
+        options = [
+            {"text": "둘러본다", "stat": "wis", "result": "아이템 발견 or 허기 감소"},
+            {"text": "쉬어간다", "stat": "con", "result": "체력 회복 or 꿈을 꾼다"},
+            {"text": "기도한다", "stat": "con", "result": "멘탈 회복 or 무의미"},
+            {"text": "떠난다", "stat": None, "result": "다음 이벤트로 진행"}
+        ]
+    elif event_type == "combat":
+        options = [
+            {"text": "싸운다", "stat": "str", "result": "몬스터와 전투 개시"},
+            {"text": "숨는다", "stat": "dex", "result": "회피 성공/실패 판정"},
+            {"text": "미끼를 던진다", "stat": "wis", "result": "적 유인 성공/실패"},
+            {"text": "그냥 도망간다", "stat": "dex", "result": "도주 여부 판정"}
+        ]
+    else:  # shelter
+        options = [
+            {"text": "불을 피운다", "stat": "con", "result": "체력 회복 + 이벤트 발생"},
+            {"text": "물자를 정리한다", "stat": "wis", "result": "인벤토리 최적화"},
+            {"text": "잠시 쉰다", "stat": "vit", "result": "전체 상태 회복 일부"},
+            {"text": "기록을 남긴다", "stat": "wis", "result": "스토리 로그 추가"}
+        ]
+    
+    events.append({
+        "id": i + 1,
+        "type": event_type,
+        "title": f"{place} - {mood}",
+        "description": base_text,
+        "options": options
+    })
+
+# Save to JSON
+with open("/mnt/data/events.json", "w", encoding="utf-8") as f:
+    json.dump(events, f, ensure_ascii=False, indent=2)
+
+events[:3]  # Show 3 sample events
