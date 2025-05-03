@@ -2,88 +2,67 @@ body, html {
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow: hidden;
-  font-family: 'Share Tech Mono', monospace;
+  font-family: monospace;
   background-color: #000;
+  color: #eee;
 }
 
 #background-image {
-  position: absolute;
+  position: fixed;
   top: 0; left: 0;
   width: 100vw;
   height: 100vh;
   object-fit: cover;
-  z-index: 1;
   filter: brightness(0.4);
+  z-index: -1;
 }
 
-.overlay {
+#game-ui {
   position: absolute;
-  z-index: 2;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: #eee;
-  text-shadow: 0 0 8px #000;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  box-sizing: border-box;
 }
 
-.game-title {
-  font-size: 3rem;
-  text-transform: lowercase;
-  margin-bottom: 1.5rem;
+#top-left {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
 }
 
-button {
-  padding: 1rem 2rem;
-  font-size: 1rem;
-  background-color: rgba(255,255,255,0.1);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  backdrop-filter: blur(4px);
+#top-right {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  text-align: right;
 }
 
-#status-bars {
-  position: fixed;
+#bottom-left {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  width: 40%;
+}
+
+#bottom-right {
+  position: absolute;
   bottom: 1rem;
   right: 1rem;
+  width: 40%;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 99;
 }
 
-.status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status img {
-  width: 20px;
-  height: 20px;
-  filter: drop-shadow(0 0 2px black);
-}
-
-.bar {
-  width: 100px;
-  height: 10px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.bar .fill {
-  height: 100%;
-  width: 15%;
-  transition: width 0.3s;
-}
-
-.health .fill { background-color: #e74c3c; }
-.hunger .fill { background-color: #2ecc71; }
-.thirst .fill { background-color: #3498db; }
-
-.hidden {
-  display: none;
+button.choice {
+  background-color: rgba(255,255,255,0.1);
+  color: #fff;
+  border: none;
+  padding: 1rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
 }

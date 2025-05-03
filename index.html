@@ -2,32 +2,53 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>she</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="title-screen">
-    <img src="images/title_bg.jpg" alt="배경" id="background-image">
-    <div class="overlay">
-      <h1 class="game-title">she</h1>
-      <button onclick="startGame()">start</button>
+  <img src="images/title_bg.jpg" alt="배경" id="background-image">
+  
+  <div id="game-ui">
+    <div id="top-left">
+      <div class="main-stats">
+        <p>체력: <span id="hp">20</span></p>
+        <p>허기: <span id="hunger">15</span></p>
+        <p>갈증: <span id="thirst">15</span></p>
+      </div>
+    </div>
+
+    <div id="top-right">
+      <h3>스탯</h3>
+      <ul id="stats">
+        <li>힘: <span id="stat-str">15</span></li>
+        <li>민첩: <span id="stat-dex">15</span></li>
+        <li>지구력: <span id="stat-con">15</span></li>
+        <li>멘탈: <span id="stat-wis">15</span></li>
+        <li>건강: <span id="stat-vit">15</span></li>
+      </ul>
+    </div>
+
+    <div id="bottom-left">
+      <h3>인벤토리</h3>
+      <div class="inventory" id="inventory">
+        <div class="item">🍲 통조림 수프 ×5</div>
+        <div class="item">💧 생수 ×2</div>
+        <div class="item">🚬 담배 ×8</div>
+        <div class="item">🔥 성냥 ×1</div>
+      </div>
+    </div>
+
+    <div id="bottom-right">
+      <div class="choices">
+        <button class="choice">일어난다</button>
+        <button class="choice">더 잔다</button>
+        <button class="choice">주위를 살핀다</button>
+        <button class="choice">기도한다</button>
+      </div>
     </div>
   </div>
-  <div id="status-bars" class="hidden">
-    <div class="status">
-      <img src="icons/blood.png" alt="체력">
-      <div class="bar health"><div class="fill" id="health-bar"></div></div>
-    </div>
-    <div class="status">
-      <img src="icons/meat.png" alt="포만감">
-      <div class="bar hunger"><div class="fill" id="hunger-bar"></div></div>
-    </div>
-    <div class="status">
-      <img src="icons/water.png" alt="목마름">
-      <div class="bar thirst"><div class="fill" id="thirst-bar"></div></div>
-    </div>
-  </div>
+
   <script src="game.js"></script>
 </body>
 </html>
