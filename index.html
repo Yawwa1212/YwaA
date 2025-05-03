@@ -1,1 +1,33 @@
-
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>she</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="title-screen">
+    <img src="images/title_bg.jpg" alt="배경" id="background-image">
+    <div class="overlay">
+      <h1 class="game-title">she</h1>
+      <button onclick="startGame()">start</button>
+    </div>
+  </div>
+  <div id="status-bars" class="hidden">
+    <div class="status">
+      <img src="icons/blood.png" alt="체력">
+      <div class="bar health"><div class="fill" id="health-bar"></div></div>
+    </div>
+    <div class="status">
+      <img src="icons/meat.png" alt="포만감">
+      <div class="bar hunger"><div class="fill" id="hunger-bar"></div></div>
+    </div>
+    <div class="status">
+      <img src="icons/water.png" alt="목마름">
+      <div class="bar thirst"><div class="fill" id="thirst-bar"></div></div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
