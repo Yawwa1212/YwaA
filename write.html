@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>글쓰기</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>✍️ 일기 쓰기</h1>
+    <div id="pwCheck">
+      <input type="password" id="password" placeholder="비밀번호 입력" />
+      <button onclick="checkPassword()">확인</button>
+    </div>
+    <div id="formSection" style="display:none;">
+      <input type="text" id="date" placeholder="YYYY-MM-DD" /><br/><br/>
+      <textarea id="content" placeholder="내용을 입력하세요..." rows="8"></textarea><br/>
+      <button onclick="submitEntry()">작성 완료</button>
+    </div>
+  </div>
+  <script src="./write.js"></script>
+</body>
+</html>

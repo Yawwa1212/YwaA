@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>몰래보는 일기장</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>📖 몰래보는 일기장</h1>
+    <div id="entry"></div>
+    <div class="nav">
+      <button onclick="prevPage()">← 이전</button>
+      <input type="number" id="pageInput" placeholder="페이지 번호"/>
+      <button onclick="goToPage()">이동</button>
+      <button onclick="nextPage()">다음 →</button>
+    </div>
+    <div class="mt-4">
+      <a href="./write.html">
+        <button>✍️ 글쓰기</button>
+      </a>
+    </div>
+  </div>
+  <script src="./script.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+body {
+  margin: 0;
+  background: #111;
+  color: #eee;
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+.container {
+  max-width: 600px;
+}
+#entry {
+  background: #222;
+  padding: 1rem;
+  border-radius: 5px;
+  min-height: 200px;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+}
+.nav {
+  display: flex;
+  gap: 0.5rem;
+}
+input {
+  width: 80px;
+}
+button {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
