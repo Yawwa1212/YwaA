@@ -1,34 +1,17 @@
 body {
   margin: 0;
-  background: #111;
-  color: #eee;
-  font-family: 'Courier New', Courier, monospace;
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
+  font-family: sans-serif;
+  background: #fefbea;
 }
-.container {
-  max-width: 600px;
-}
-#entry {
-  background: #222;
-  padding: 1rem;
+
+.postit {
+  position: absolute;
+  background: #fffb87;
+  padding: 15px;
+  width: 150px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  border: 1px solid #ddd;
+  word-wrap: break-word;
   border-radius: 5px;
-  min-height: 200px;
-  margin-bottom: 1rem;
-  white-space: pre-wrap;
-}
-.nav {
-  display: flex;
-  gap: 0.5rem;
-}
-input {
-  width: 80px;
-}
-button {
-  background: #333;
-  color: white;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  cursor: pointer;
+  font-size: 14px;
 }

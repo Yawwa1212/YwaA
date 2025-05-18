@@ -1,24 +1,30 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>글쓰기</title>
-  <link rel="stylesheet" href="./style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>✍️ 일기 쓰기</h1>
-    <div id="pwCheck">
-      <input type="password" id="password" placeholder="비밀번호 입력" />
-      <button onclick="checkPassword()">확인</button>
-    </div>
-    <div id="formSection" style="display:none;">
-      <input type="text" id="date" placeholder="YYYY-MM-DD" /><br/><br/>
-      <textarea id="content" placeholder="내용을 입력하세요..." rows="8"></textarea><br/>
-      <button onclick="submitEntry()">작성 완료</button>
-    </div>
-  </div>
-  <script type="module" src="./write.js"></script>
+  <h1>자유롭게 글을 써보세요</h1>
+  <textarea id="content" rows="5" cols="40" placeholder="아무 말이나 적어보세요!"></textarea><br>
+  <button onclick="savePost()">저장</button>
+
+  <script>
+    const db = firebase.firestore();
+    function savePost() {
+      const content = document.getElementById('content').value;
+      if (content.trim() === '') return alert("내용을 입력해주세요.");
+      db.collection("posts").add({
+        content: content,
+        timestamp: Date.now()
+      }).then(() => {
+        alert("저장 완료!");
+        location.href = "index.html";
+      });
+    }
+  </script>
 </body>
 </html>

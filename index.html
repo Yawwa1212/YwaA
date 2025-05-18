@@ -1,27 +1,36 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DIA</title></title>
-  <link rel="stylesheet" href="./style.css" />
+  <meta charset="UTF-8">
+  <title>랜덤 게시판</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>📖 DIA</h1>
-    <div id="entry"></div>
-    <div class="nav">
-      <button onclick="prevPage()">← 이전</button>
-      <input type="number" id="pageInput" placeholder="페이지 번호"/>
-      <button onclick="goToPage()">이동</button>
-      <button onclick="nextPage()">다음 →</button>
-    </div>
-    <div class="mt-4">
-      <a href="./write.html">
-        <button>✍️ 글쓰기</button>
-      </a>
-    </div>
-  </div>
-  <script src="./script.js"></script>
+  <h1>누구나 남긴 말들</h1>
+  <a href="write.html">✍️ 글 쓰기</a>
+  <div id="board" style="position:relative; width:100%; height:100vh;"></div>
+
+  <script>
+    const db = firebase.firestore();
+    const board = document.getElementById("board");
+
+    db.collection("posts").orderBy("timestamp", "desc").limit(50).get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const note = document.createElement("div");
+        note.className = "postit";
+        note.innerText = data.content;
+
+        note.style.top = Math.random() * 80 + "%";
+        note.style.left = Math.random() * 80 + "%";
+        note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
+
+        board.appendChild(note);
+      });
+    });
+  </script>
 </body>
 </html>
