@@ -1,3 +1,19 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAWJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
+  authDomain: "fuc333-928d9.firebaseapp.com",
+  projectId: "fuc333-928d9",
+  storageBucket: "fuc333-928d9.appspot.com",
+  messagingSenderId: "337756181444",
+  appId: "1:337756181444:web:6f4846f5dc09808ed30a91",
+  measurementId: "G-YZQJVG4CWL"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 function checkPassword() {
   const pw = document.getElementById("password").value;
   if (pw === "855331!") {
@@ -8,7 +24,7 @@ function checkPassword() {
   }
 }
 
-function submitEntry() {
+async function submitEntry() {
   const date = document.getElementById("date").value;
   const content = document.getElementById("content").value;
 
@@ -17,7 +33,16 @@ function submitEntry() {
     return;
   }
 
-  alert("작성 완료! (주의: 현재는 실제 저장되지 않습니다)");
+  await addDoc(collection(db, "entries"), {
+    date,
+    content,
+    createdAt: serverTimestamp()
+  });
+
+  alert("작성 완료! 글이 저장되었습니다.");
   document.getElementById("date").value = "";
   document.getElementById("content").value = "";
 }
+
+window.checkPassword = checkPassword;
+window.submitEntry = submitEntry;
