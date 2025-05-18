@@ -2,14 +2,14 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>랜덤 게시판</title>
+  <title>랜덤</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h1>누구나 남긴 말들</h1>
+  <h1>익명</h1>
   <a href="write.html">✍️ 글 쓰기</a>
   <div id="board" style="position:relative; width:100%; height:100vh;"></div>
 
@@ -17,7 +17,7 @@
     const db = firebase.firestore();
     const board = document.getElementById("board");
 
-    db.collection("posts").orderBy("timestamp", "desc").limit(50).get().then(snapshot => {
+    db.collection("entries").orderBy("createdAt", "desc").limit(50).get().then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
         const note = document.createElement("div");
@@ -30,6 +30,8 @@
 
         board.appendChild(note);
       });
+    }).catch(err => {
+      console.error("불러오기 실패:", err);
     });
   </script>
 </body>
