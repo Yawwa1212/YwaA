@@ -3,33 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>글쓰기</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h1>허하</h1>
-  <textarea id="content" rows="5" cols="40" placeholder="아무 말이나 적어보세요!"></textarea><br>
-  <button onclick="savePost()">저장</button>
-
-  <script>
-    const db = firebase.firestore();
-    function savePost() {
-      const content = document.getElementById('content').value;
-      if (content.trim() === '') return alert("내용을 입력해주세요.");
-
-      db.collection("entries").add({  // ← 여기가 핵심!!
-        content: content,
-        createdAt: new Date(),
-        date: new Date().toISOString().split("T")[0]
-      }).then(() => {
-        alert("저장 완료!");
-        location.href = "index.html";
-      }).catch(err => {
-        console.error("저장 실패:", err);
-        alert("에러가 발생했어요! 콘솔을 확인해주세요.");
-      });
-    }
-  </script>
+  <h1>아직 글쓰기 기능은 수동 편집이 필요합니다</h1>
+  <p>entries.json 파일을 직접 수정해 주세요.</p>
+  <a href="index.html">돌아가기</a>
 </body>
 </html>

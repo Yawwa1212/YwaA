@@ -2,37 +2,32 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>랜덤</title>
+  <title>랜덤 게시판 (JSON)</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h1>익명</h1>
+  <h1>누구나 남긴 말들</h1>
   <a href="write.html">✍️ 글 쓰기</a>
   <div id="board" style="position:relative; width:100%; height:100vh;"></div>
 
   <script>
-    const db = firebase.firestore();
-    const board = document.getElementById("board");
+    fetch('entries.json')
+      .then(res => res.json())
+      .then(data => {
+        const board = document.getElementById("board");
+        data.forEach(entry => {
+          const note = document.createElement("div");
+          note.className = "postit";
+          note.innerText = entry.content;
 
-    db.collection("entries").orderBy("createdAt", "desc").limit(50).get().then(snapshot => {
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const note = document.createElement("div");
-        note.className = "postit";
-        note.innerText = data.content;
-
-        note.style.top = Math.random() * 80 + "%";
-        note.style.left = Math.random() * 80 + "%";
-        note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
-
-        board.appendChild(note);
+          note.style.top = Math.random() * 80 + "%";
+          note.style.left = Math.random() * 80 + "%";
+          note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
+          board.appendChild(note);
+        });
+      }).catch(err => {
+        console.error("entries.json 불러오기 실패:", err);
       });
-    }).catch(err => {
-      console.error("불러오기 실패:", err);
-    });
   </script>
 </body>
 </html>
