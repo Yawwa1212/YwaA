@@ -16,6 +16,7 @@ const db = getFirestore(app);
 
 function checkPassword() {
   const pw = document.getElementById("password").value;
+  console.log("입력된 비밀번호:", pw); // ✅ 콘솔 출력
   if (pw === "855331!") {
     document.getElementById("pwCheck").style.display = "none";
     document.getElementById("formSection").style.display = "block";
