@@ -38,3 +38,15 @@ body {
   color: #111;
   background: #ffff88;
 }
+
+textarea {
+  background-color: #000 !important;
+  color: #000 !important;
+  border: 2px solid white;
+  border-radius: 12px;
+  padding: 20px;
+  font-size: 20px;
+  width: 80%;
+  height: 300px;
+  resize: none;
+}
