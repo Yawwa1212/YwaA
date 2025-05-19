@@ -4,21 +4,48 @@
   <meta charset="UTF-8">
   <title>포스트잇 붙이기</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    #music-button {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #ffffff10;
+      border: 2px solid white;
+      color: white;
+      padding: 20px 40px;
+      font-size: 24px;
+      font-family: sans-serif;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 9999;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+    }
+
+    #music-button:hover {
+      background-color: #ffffff30;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+  </style>
 </head>
 <body>
-<audio id="bgm" autoplay loop muted>
+<audio id="bgm" loop>
   <source src="bg-music.mp3" type="audio/mpeg">
   브라우저가 오디오 태그를 지원하지 않습니다.
 </audio>
 
+<button id="music-button" onclick="startMusic()">🎵 음악 켜기</button>
+
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const bgm = document.getElementById('bgm');
-    bgm.muted = false;
-    bgm.play().catch((e) => {
-      console.log("Autoplay failed. User interaction required.", e);
+  function startMusic() {
+    const audio = document.getElementById('bgm');
+    audio.play().then(() => {
+      document.getElementById('music-button').style.display = 'none';
+    }).catch((e) => {
+      alert("음악 재생에 실패했습니다: " + e.message);
     });
-  });
+  }
 </script>
 
 <h1>포스트잇 붙이기</h1>
