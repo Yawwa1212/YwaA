@@ -1,22 +1,16 @@
 body {
   background-color: #000;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.05) 11px,
+      transparent 12px
+    ),
+    radial-gradient(white 1px, transparent 1px);
+  background-size: 100% 100%, 4px 4px;
+  background-repeat: repeat;
   margin: 0;
   padding: 0;
-}
-
-.postit {
-  position: absolute;
-  width: 200px;
-  height: auto;
-  padding: 10px;
-  border: 1px solid #cccc00;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-  font-family: sans-serif;
-  word-break: break-word;
-  color: #111;
-}
-
-/* Fallback yellow in case JS fails */
-.postit {
-  background: #ffff88;
 }
