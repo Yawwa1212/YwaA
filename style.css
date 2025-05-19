@@ -1,16 +1,6 @@
 body {
-  background-color: #000;
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      transparent,
-      transparent 10px,
-      rgba(255, 255, 255, 0.04) 11px,
-      transparent 12px
-    ),
-    radial-gradient(white 1px, transparent 1px);
-  background-size: 100% 100%, 4px 4px;
-  background-repeat: repeat;
+  background: #000 url("Gemini_Generated_Image_g9mxgdg9mxgdg9mx.png") no-repeat center center fixed;
+  background-size: cover;
   margin: 0;
   padding: 0;
 }
@@ -25,5 +15,5 @@ body {
   font-family: sans-serif;
   word-break: break-word;
   color: #111;
-  background: #ffff88; /* fallback color - gets overridden by JS */
+  background: #ffff88;
 }
