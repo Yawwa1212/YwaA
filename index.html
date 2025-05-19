@@ -2,84 +2,32 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>post</title>
+  <title>랜덤 게시판 (JSON)</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    #music-button {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: #ffffff10;
-      border: 2px solid white;
-      color: white;
-      padding: 20px 40px;
-      font-size: 24px;
-      font-family: sans-serif;
-      border-radius: 12px;
-      cursor: pointer;
-      z-index: 9999;
-      backdrop-filter: blur(5px);
-      transition: all 0.3s ease;
-    }
-
-    #music-button:hover {
-      background-color: #ffffff30;
-      transform: translate(-50%, -50%) scale(1.05);
-    }
-  </style>
 </head>
 <body>
-<audio id="bgm" loop>
-  <source src="bg-music.mp3" type="audio/mpeg">
-</audio>
+  <h1>누구나 남긴 말들</h1>
+  <a href="write.html">✍️ 글 쓰기</a>
+  <div id="board" style="position:relative; width:100%; height:100vh;"></div>
 
-<button id="music-button" onclick="startMusic()">ON</button>
+  <script>
+    fetch('entries.json')
+      .then(res => res.json())
+      .then(data => {
+        const board = document.getElementById("board");
+        data.forEach(entry => {
+          const note = document.createElement("div");
+          note.className = "postit";
+          note.innerText = entry.content;
 
-<script>
-  function startMusic() {
-    const audio = document.getElementById('bgm');
-    audio.play().then(() => {
-      document.getElementById('music-button').style.display = 'none';
-    }).catch((e) => {
-      alert("음악 재생에 실패했습니다: " + e.message);
-    });
-  }
-</script>
-
-<h1>post</h1>
-<a href="write.html" class="write-button">✍️POST-IT</a>
-<div id="board" style="position:relative; width:100%; height:100vh;"></div>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
-    authDomain: "fuc333-928d9.firebaseapp.com",
-    databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
-    projectId: "fuc333-928d9",
-    storageBucket: "fuc333-928d9.firebasestorage.app",
-    messagingSenderId: "337756181444",
-    appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  const board = document.getElementById("board");
-  db.ref("messages").on("child_added", snapshot => {
-    const entry = snapshot.val();
-    const note = document.createElement("div");
-    note.className = "postit";
-    const colors = ["#fdfd96", "#ffb347", "#aec6cf", "#ff6961", "#c1f0c1", "#dda0dd"];
-    note.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    note.innerHTML = entry.content.replace(/\n/g, "<br>");
-    note.style.top = Math.random() * 80 + "%";
-    note.style.left = Math.random() * 80 + "%";
-    note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
-    board.appendChild(note);
-  });
-</script>
+          note.style.top = Math.random() * 80 + "%";
+          note.style.left = Math.random() * 80 + "%";
+          note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
+          board.appendChild(note);
+        });
+      }).catch(err => {
+        console.error("entries.json 불러오기 실패:", err);
+      });
+  </script>
 </body>
 </html>
