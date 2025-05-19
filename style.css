@@ -1,11 +1,22 @@
+body {
+  background-color: #000;
+  margin: 0;
+  padding: 0;
+}
+
 .postit {
   position: absolute;
   width: 200px;
   height: auto;
   padding: 10px;
-  background: #ffff88;
   border: 1px solid #cccc00;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
   font-family: sans-serif;
   word-break: break-word;
+  color: #111;
+}
+
+/* Fallback yellow in case JS fails */
+.postit {
+  background: #ffff88;
 }

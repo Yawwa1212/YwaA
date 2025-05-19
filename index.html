@@ -2,11 +2,11 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>익명 포스트잇</title>
+  <title>포스트잇 붙이기</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>익명 포스트잇</h1>
+  <h1>포스트잇 붙이기</h1>
   <a href="write.html">✍️ 글 쓰기</a>
   <div id="board" style="position:relative; width:100%; height:100vh;"></div>
 
@@ -31,6 +31,10 @@
       const entry = snapshot.val();
       const note = document.createElement("div");
       note.className = "postit";
+      // 랜덤 색상 목록 중 하나를 배경색으로 지정
+      const colors = ["#fdfd96", "#ffb347", "#aec6cf", "#ff6961", "#c1f0c1", "#dda0dd"];
+      note.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    
       note.innerText = entry.content;
       note.style.top = Math.random() * 80 + "%";
       note.style.left = Math.random() * 80 + "%";
