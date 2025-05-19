@@ -1,40 +1,58 @@
 body {
-  background: #000 url("Gemini_Generated_Image_o6bke0o6bke0o6bk.png") no-repeat center center fixed;
-  background-size: cover;
   margin: 0;
-  padding: 0;
-}
-
-.write-button {
-  display: inline-block;
-  margin: 20px;
-  padding: 20px 40px;
-  font-size: 24px;
-  font-weight: bold;
   font-family: sans-serif;
-  color: black;
-  text-decoration: none;
-  background-color: #ffffff10;
-  border: 2px solid white;
-  border-radius: 12px;
-  backdrop-filter: blur(4px);
-  transition: all 0.3s ease;
+  background-image: url('background.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
-.write-button:hover {
-  background-color: #ffffff30;
-  transform: scale(1.05);
+#board {
+  position: relative;
+  width: 100%;
+  height: 100vh;
 }
 
 .postit {
   position: absolute;
-  width: 200px;
-  height: auto;
+  background: #fffb87;
+  padding: 15px;
+  width: 150px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  word-wrap: break-word;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.note-footer {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+#chat-box {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  width: 250px;
+  background: white;
+  border: 1px solid #aaa;
+  border-radius: 8px;
   padding: 10px;
-  border: 1px solid #cccc00;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-  font-family: sans-serif;
-  word-break: break-word;
-  color: #111;
-  background: #ffff88;
+  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+  font-size: 13px;
+}
+
+#messages {
+  height: 120px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 5px;
+  margin-bottom: 8px;
+  background: #f9f9f9;
+}
+
+#chat-input {
+  width: 70%;
 }
