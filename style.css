@@ -60,23 +60,3 @@ a[href="write.html"]:hover {
   background-color: #ffffff30;
   transform: scale(1.05);
 }
-.write-button {
-  display: inline-block;
-  margin: 20px;
-  padding: 20px 40px;
-  font-size: 24px;
-  font-weight: bold;
-  font-family: sans-serif;
-  color: white;
-  text-decoration: none;
-  background-color: #ffffff10;
-  border: 2px solid white;
-  border-radius: 12px;
-  backdrop-filter: blur(4px);
-  transition: all 0.3s ease;
-}
-
-.write-button:hover {
-  background-color: #ffffff30;
-  transform: scale(1.05);
-}

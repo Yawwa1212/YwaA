@@ -3,13 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <title>글쓰기</title>
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 80%;
+      height: 300px;
+      font-size: 20px;
+      padding: 20px;
+      border: 2px solid white;
+      border-radius: 12px;
+      background-color: #111;
+      color: white;
+      resize: none;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 16px 32px;
+      font-size: 20px;
+      background-color: #ffffff10;
+      color: white;
+      border: 2px solid white;
+      border-radius: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #ffffff30;
+      transform: scale(1.05);
+    }
+  </style>
 </head>
 <body>
   <h1>✍️ 글쓰기</h1>
-  <textarea id="entryContent" rows="5" cols="50" placeholder="아무 말이나 써보세요 :)"></textarea><br>
+  <textarea id="entryContent" placeholder="여기에 내용을 입력하세요 :)"></textarea><br>
   <button onclick="submitEntry()">등록</button>
 
-  <!-- Firebase v8 CDN SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
@@ -33,13 +79,14 @@
         return;
       }
 
+      const timestamp = Date.now();
       db.ref("messages").push({
         content,
-        timestamp: Date.now()
+        timestamp
       }).then(() => {
         alert("글이 등록되었습니다!");
         window.location.href = "index.html";
-      }).catch(error => {
+      }).catch((error) => {
         alert("오류 발생: " + error.message);
       });
     }
