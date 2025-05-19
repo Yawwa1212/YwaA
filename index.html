@@ -6,45 +6,54 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<audio autoplay loop>
+<audio id="bgm" autoplay loop muted>
   <source src="bg-music.mp3" type="audio/mpeg">
   브라우저가 오디오 태그를 지원하지 않습니다.
 </audio>
-  <h1>포스트잇 붙이기</h1>
-  <a href="write.html">✍️ 글 쓰기</a>
-  <div id="board" style="position:relative; width:100%; height:100vh;"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
-      authDomain: "fuc333-928d9.firebaseapp.com",
-      databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
-      projectId: "fuc333-928d9",
-      storageBucket: "fuc333-928d9.firebasestorage.app",
-      messagingSenderId: "337756181444",
-      appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const board = document.getElementById("board");
-    db.ref("messages").on("child_added", snapshot => {
-      const entry = snapshot.val();
-      const note = document.createElement("div");
-      note.className = "postit";
-      // 랜덤 색상 목록 중 하나를 배경색으로 지정
-      const colors = ["#fdfd96", "#ffb347", "#aec6cf", "#ff6961", "#c1f0c1", "#dda0dd"];
-      note.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    
-      note.innerText = entry.content;
-      note.style.top = Math.random() * 80 + "%";
-      note.style.left = Math.random() * 80 + "%";
-      note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
-      board.appendChild(note);
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const bgm = document.getElementById('bgm');
+    bgm.muted = false;
+    bgm.play().catch((e) => {
+      console.log("Autoplay failed. User interaction required.", e);
     });
-  </script>
+  });
+</script>
+
+<h1>포스트잇 붙이기</h1>
+<a href="write.html">✍️ 글 쓰기</a>
+<div id="board" style="position:relative; width:100%; height:100vh;"></div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
+    authDomain: "fuc333-928d9.firebaseapp.com",
+    databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
+    projectId: "fuc333-928d9",
+    storageBucket: "fuc333-928d9.firebasestorage.app",
+    messagingSenderId: "337756181444",
+    appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const board = document.getElementById("board");
+  db.ref("messages").on("child_added", snapshot => {
+    const entry = snapshot.val();
+    const note = document.createElement("div");
+    note.className = "postit";
+    const colors = ["#fdfd96", "#ffb347", "#aec6cf", "#ff6961", "#c1f0c1", "#dda0dd"];
+    note.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    note.innerHTML = entry.content.replace(/\n/g, "<br>");
+    note.style.top = Math.random() * 80 + "%";
+    note.style.left = Math.random() * 80 + "%";
+    note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
+    board.appendChild(note);
+  });
+</script>
 </body>
 </html>
