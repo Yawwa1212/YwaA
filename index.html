@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>랜덤 게시판 (JSON)</title>
+  <title>누구나 남긴 말들</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,24 +10,32 @@
   <a href="write.html">✍️ 글 쓰기</a>
   <div id="board" style="position:relative; width:100%; height:100vh;"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
   <script>
-    fetch('entries.json')
-      .then(res => res.json())
-      .then(data => {
-        const board = document.getElementById("board");
-        data.forEach(entry => {
-          const note = document.createElement("div");
-          note.className = "postit";
-          note.innerText = entry.content;
+    const firebaseConfig = {
+  apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
+  authDomain: "fuc333-928d9.firebaseapp.com",
+  databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
+  projectId: "fuc333-928d9",
+  storageBucket: "fuc333-928d9.firebasestorage.app",
+  messagingSenderId: "337756181444",
+  appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
+};
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-          note.style.top = Math.random() * 80 + "%";
-          note.style.left = Math.random() * 80 + "%";
-          note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
-          board.appendChild(note);
-        });
-      }).catch(err => {
-        console.error("entries.json 불러오기 실패:", err);
-      });
+    const board = document.getElementById("board");
+    db.ref("messages").on("child_added", snapshot => {
+      const entry = snapshot.val();
+      const note = document.createElement("div");
+      note.className = "postit";
+      note.innerText = entry.content;
+      note.style.top = Math.random() * 80 + "%";
+      note.style.left = Math.random() * 80 + "%";
+      note.style.transform = "rotate(" + (Math.random() * 10 - 5) + "deg)";
+      board.appendChild(note);
+    });
   </script>
 </body>
 </html>

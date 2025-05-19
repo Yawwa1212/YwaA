@@ -5,8 +5,42 @@
   <title>글쓰기</title>
 </head>
 <body>
-  <h1>아직 글쓰기 기능은 수동 편집이 필요합니다</h1>
-  <p>entries.json 파일을 직접 수정해 주세요.</p>
-  <a href="index.html">돌아가기</a>
+  <h1>✍️ 글쓰기</h1>
+  <textarea id="entryContent" rows="5" cols="50"></textarea><br>
+  <button onclick="submitEntry()">등록</button>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
+  authDomain: "fuc333-928d9.firebaseapp.com",
+  databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
+  projectId: "fuc333-928d9",
+  storageBucket: "fuc333-928d9.firebasestorage.app",
+  messagingSenderId: "337756181444",
+  appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
+};
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function submitEntry() {
+      const content = document.getElementById("entryContent").value.trim();
+      if (!content) {
+        alert("내용을 입력해주세요.");
+        return;
+      }
+      const timestamp = Date.now();
+      db.ref("messages").push({
+        content,
+        timestamp
+      }).then(() => {
+        alert("글이 등록되었습니다!");
+        window.location.href = "index.html";
+      }).catch((error) => {
+        alert("오류 발생: " + error.message);
+      });
+    }
+  </script>
 </body>
 </html>

@@ -1,17 +1,11 @@
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #fefbea;
-}
-
 .postit {
   position: absolute;
-  background: #fffb87;
-  padding: 15px;
-  width: 150px;
+  width: 200px;
+  height: auto;
+  padding: 10px;
+  background: #ffff88;
+  border: 1px solid #cccc00;
   box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-  border: 1px solid #ddd;
-  word-wrap: break-word;
-  border-radius: 5px;
-  font-size: 14px;
+  font-family: sans-serif;
+  word-break: break-word;
 }
