@@ -6,22 +6,24 @@
 </head>
 <body>
   <h1>✍️ 글쓰기</h1>
-  <textarea id="entryContent" rows="5" cols="50"></textarea><br>
+  <textarea id="entryContent" rows="5" cols="50" placeholder="아무 말이나 써보세요 :)"></textarea><br>
   <button onclick="submitEntry()">등록</button>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+  <!-- CDN 방식 Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
-  authDomain: "fuc333-928d9.firebaseapp.com",
-  databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
-  projectId: "fuc333-928d9",
-  storageBucket: "fuc333-928d9.firebasestorage.app",
-  messagingSenderId: "337756181444",
-  appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
-};
-    const app = firebase.initializeApp(firebaseConfig);
+      apiKey: "AIzaSyAWPJpsr_zqn6VUM2XPeC7uHgdqgs_maJ4",
+      authDomain: "fuc333-928d9.firebaseapp.com",
+      databaseURL: "https://fuc333-928d9-default-rtdb.firebaseio.com",
+      projectId: "fuc333-928d9",
+      storageBucket: "fuc333-928d9.firebasestorage.app",
+      messagingSenderId: "337756181444",
+      appId: "1:337756181444:web:6f4846f5dc09808ed30a91"
+    };
+
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     function submitEntry() {
@@ -30,14 +32,14 @@
         alert("내용을 입력해주세요.");
         return;
       }
-      const timestamp = Date.now();
+
       db.ref("messages").push({
         content,
-        timestamp
+        timestamp: Date.now()
       }).then(() => {
         alert("글이 등록되었습니다!");
         window.location.href = "index.html";
-      }).catch((error) => {
+      }).catch(error => {
         alert("오류 발생: " + error.message);
       });
     }
