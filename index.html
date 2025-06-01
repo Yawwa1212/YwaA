@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DiCE_i_⅃L_i_ƎƆ!ᗡ</title>
+  <style>
+    html, body {
+  font-size: 2.2rem;
+      margin: 0;
+      padding: 0;
+      background: black;
+      color: white;
+      font-family: 'IBM Plex Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    #title {
+      font-size: 5rem;
+      letter-spacing: -0.12em;
+      transform: scaleX(0.95);
+      margin: 2rem 0;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap');
+    body {
+      background: black;
+      color: white;
+      font-family: 'IBM Plex Mono', monospace;
+      text-align: center;
+      margin: 0;
+      padding: 2rem;
+    }
+    #title {
+      font-size: 2.5rem;
+      margin: 2rem 0;
+      height: 3rem;
+    }
+    .dice-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 2rem;
+    }
+    .dice {
+      font-size: 3rem;
+      font-size: 2rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: #333;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.3s;
+    }
+    button {
+      font-size: 2rem;
+      font-size: 1.2rem;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      cursor: pointer;
+      background: #111;
+      border: 1px solid white;
+      color: white;
+    }
+  
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(2deg); }
+  50% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+.laughing {
+  animation: wiggle 0.15s infinite;
+  color: #ff69b4;
+}
+</style>
+
+</head>
+<body>
+
+  <div>DEALER</div>
+  <div id="dealer-row" class="dice-row"></div>
+
+  <div id="title">DiCE_i_⅃L_i_ƎƆ!ᗡ</div>
+
+  <div>PLAYER</div>
+  <div id="player-row" class="dice-row"></div>
+
+  <button onclick="rollPlayerDice()">! i !</button>
+  <button onclick="stand()">Stand</button>
+
+  <script>
+    const diceSounds = [
+      "070766_2d6-rolling-dice-35977.mp3",
+      "070921_2d6-rolling-dice-37050.mp3",
+      "075220_2d6-rolling-dice-35981.mp3",
+      "dice 1-dice-roll-201898 복사본.mp3",
+      "dice 2-dice-roll-201898 복사본.mp3"
+    ];
+
+    function playRandomDiceSound() {
+      const src = diceSounds[Math.floor(Math.random() * diceSounds.length)];
+      const audio = new Audio(src);
+      audio.volume = 0.5;
+      audio.play();
+    }
+
+    let playerTotal = 0;
+    let dealerTotal = 0;
+
+    function rollDice(targetRow, isPlayer = true) {
+      playRandomDiceSound();
+      const diceEl = document.createElement("div");
+      diceEl.className = "dice";
+      diceEl.textContent = "-";
+      targetRow.appendChild(diceEl);
+
+      let count = 0;
+      const interval = setInterval(() => {
+        const num = Math.floor(Math.random() * 10) + 1;
+        diceEl.textContent = num;
+        diceEl.style.transform = "rotate(" + (Math.random() * 360) + "deg)";
+        count++;
+        if (count > 5) {
+          clearInterval(interval);
+          diceEl.style.transform = "rotate(0deg)";
+          if (isPlayer) {
+            playerTotal += num;
+            if (playerTotal > 21) {
+              updateTitle("BUST");
+              disableButtons();
+            }
+          } else {
+            dealerTotal += num;
+          }
+        }
+      }, 50);
+    }
+
+    function rollPlayerDice() {
+      if (playerTotal > 21) return;
+      rollDice(document.getElementById("player-row"), true);
+    }
+
+    function stand() {
+      disableButtons();
+      dealerRollLoop();
+    }
+
+    function disableButtons() {
+      document.querySelectorAll("button").forEach(btn => btn.disabled = true);
+    }
+
+    function dealerRollLoop() {
+      const row = document.getElementById("dealer-row");
+      if (dealerTotal >= 17) {
+        finishGame();
+        return;
+      }
+      rollDice(row, false);
+      setTimeout(dealerRollLoop, 700);
+    }
+
+    function updateTitle(resultText) {
+      const title = document.getElementById("title");
+      title.textContent = resultText;
+    }
+
+    function finishGame() {
+      if (dealerTotal > 21) {
+        updateTitle("WIN");
+      } else if (playerTotal > dealerTotal) {
+        updateTitle("WIN");
+      } else if (playerTotal < dealerTotal) {
+        updateTitle("ㅋㅋㅋㅋㅋㅋ LOSE~~~!"); playLoseSound(); document.getElementById("title").classList.add("laughing");
+      } else {
+        updateTitle("PUSH");
+      }
+    }
+  
+let loseAudio = new Audio("Take1-1_ㅋㅋㅋㅋㅋ피융신ㅋㅋㅋ_2025-06-01.wav");
+loseAudio.loop = true;
+
+function playLoseSound() {
+  loseAudio.currentTime = 0;
+  loseAudio.play().catch(() => {});
+}
+</script>
+
+</body>
+</html>
