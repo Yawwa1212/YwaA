@@ -338,7 +338,7 @@
             <div class="side-wall left-wall pool-element"></div>
             <div class="side-wall right-wall pool-element"></div>
             <div class="water-surface pool-element">
-                <div class="pool-bottom-tiles"></div> {/* 수영장 바닥 타일 추가 */}
+                <div class="pool-bottom-tiles"></div>
                 <div class="water-reflection"></div>
             </div>
             <div class="haze-overlay"></div> 
@@ -352,7 +352,7 @@
         const introContainer = document.getElementById('intro-container');
         const puzzleContainer = document.getElementById('puzzle-container');
         const nextSceneContainer = document.getElementById('next-scene-container');
-        const poolSceneElement = document.getElementById('pool-scene'); // 수영장 씬 요소 미리 참조
+        const poolSceneElement = document.getElementById('pool-scene');
         
         let audioContext; 
         const introTexts = [
@@ -375,7 +375,7 @@
 
         let wavingTextInterval; 
         let poolSoundNodes = {}; 
-        let poolMouseMoveHandlerRef; // 마우스 이동 핸들러 참조 저장
+        let poolMouseMoveHandlerRef;
 
         function createWavingText(targetContainer) {
             if (!targetContainer || targetContainer.style.display === 'none') return;
@@ -403,24 +403,41 @@
             if (!audioContext) {
                 try {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    if (audioContext.state === 'suspended') {
-                        audioContext.resume();
-                    }
                 } catch (e) {
-                    console.warn("Web Audio API is not supported or could not be initialized.", e);
+                    console.error("Web Audio API is not supported or could not be initialized.", e);
+                    triggerVisualsOnly();
+                    return;
                 }
             }
 
+            audioContext.resume().then(() => {
+                console.log("AudioContext is active.");
+                
+                if (powerButtonContainer) {
+                    powerButtonContainer.style.display = 'none';
+                }
+
+                if (introContainer) {
+                    introContainer.style.display = 'block'; 
+                }
+                document.title = "Unsettling Dream - !!ERROR!!"; 
+                
+                triggerGlitchEvent(); 
+            }).catch(e => {
+                console.error("AudioContext could not be resumed.", e);
+                triggerVisualsOnly();
+            });
+        }
+        
+        function triggerVisualsOnly() {
             if (powerButtonContainer) {
                 powerButtonContainer.style.display = 'none';
             }
-
             if (introContainer) {
                 introContainer.style.display = 'block'; 
             }
-            document.title = "Unsettling Dream - !!ERROR!!"; 
-            
-            triggerGlitchEvent(); 
+            document.title = "Unsettling Dream - !!ERROR!!";
+            triggerGlitchEvent(true); 
         }
 
         if (powerButton) {
@@ -482,9 +499,9 @@
             }, 700 + Math.random() * 500); 
         }
 
-        function triggerGlitchEvent() {
+        function triggerGlitchEvent(soundOff = false) {
             if (introContainer) {
-                 for (let i = 0; i < 20; i++) { 
+                for (let i = 0; i < 20; i++) { 
                     const textElement = document.createElement('div');
                     textElement.classList.add('glitch-text'); 
                     textElement.textContent = introTexts[Math.floor(Math.random() * introTexts.length)];
@@ -496,7 +513,9 @@
                 }
             }
 
-            playGlitchSound(); 
+            if (!soundOff) {
+                playGlitchSound(); 
+            }
 
             setTimeout(() => {
                 if (introContainer) {
@@ -542,10 +561,10 @@
             stopPoolAmbientSound(); 
 
             poolSoundNodes.mainGain = audioContext.createGain();
-            poolSoundNodes.mainGain.gain.setValueAtTime(0.25, audioContext.currentTime); // 전체 볼륨 약간 줄임
+            poolSoundNodes.mainGain.gain.setValueAtTime(0.25, audioContext.currentTime);
 
             poolSoundNodes.convolver = audioContext.createConvolver();
-            poolSoundNodes.convolver.buffer = createImpulseResponse(2.0, 3.0); // 리버브 더 길고 부드럽게
+            poolSoundNodes.convolver.buffer = createImpulseResponse(2.0, 3.0);
             
             poolSoundNodes.mainGain.connect(poolSoundNodes.convolver);
             poolSoundNodes.convolver.connect(audioContext.destination);
@@ -553,7 +572,7 @@
             poolSoundNodes.humOscillator = audioContext.createOscillator();
             poolSoundNodes.humGain = audioContext.createGain();
             poolSoundNodes.humOscillator.type = 'sine';
-            poolSoundNodes.humOscillator.frequency.setValueAtTime(45, audioContext.currentTime); // 험 주파수 약간 낮춤
+            poolSoundNodes.humOscillator.frequency.setValueAtTime(45, audioContext.currentTime);
             poolSoundNodes.humGain.gain.setValueAtTime(0.01, audioContext.currentTime); 
             poolSoundNodes.humOscillator.connect(poolSoundNodes.humGain);
             poolSoundNodes.humGain.connect(poolSoundNodes.mainGain); 
@@ -578,12 +597,12 @@
 
                 const now = audioContext.currentTime;
                 env.gain.setValueAtTime(0, now);
-                env.gain.linearRampToValueAtTime(1, now + 0.005); // Attack 더 짧게
-                env.gain.exponentialRampToValueAtTime(0.0001, now + 0.08 + Math.random() * 0.08); // Decay 더 짧게
+                env.gain.linearRampToValueAtTime(1, now + 0.005);
+                env.gain.exponentialRampToValueAtTime(0.0001, now + 0.08 + Math.random() * 0.08);
 
                 osc.stop(now + 0.15);
                 
-                const nextDripTime = (Math.random() * 10 + 7) * 1000; // 7~17초 후
+                const nextDripTime = (Math.random() * 10 + 7) * 1000;
                 poolSoundNodes.dripTimeout = setTimeout(playDrip, nextDripTime);
             }
             playDrip(); 
@@ -605,7 +624,6 @@
             console.log("Pool ambient sounds stopped.");
         }
 
-        // 수영장 씬 마우스 이동 핸들러
         const handlePoolMouseMove = (event) => {
             if (!nextSceneContainer || nextSceneContainer.style.display === 'none' || !poolSceneElement) return;
 
@@ -614,14 +632,12 @@
             const mouseX = event.clientX;
             const mouseY = event.clientY;
 
-            // 최대 회전 각도 (미세하게 조절)
             const maxRotX = 1; 
             const maxRotY = 1.5; 
 
             const rotX = -((mouseY - centerY) / centerY) * maxRotX;
             const rotY = ((mouseX - centerX) / centerX) * maxRotY;
             
-            // translateZ 값을 추가하여 약간의 깊이 변화도 줌
             poolSceneElement.style.transform = `translateZ(-30px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
         };
         
@@ -637,18 +653,17 @@
                 }
                 
                 if (nextSceneContainer) {
-                     nextSceneContainer.style.display = 'block'; 
-                     if(poolSceneElement) {
-                         poolSceneElement.style.opacity = 0; 
-                         setTimeout(() => { 
-                             poolSceneElement.style.opacity = 1;
-                             poolSceneElement.style.transform = 'translateZ(-30px) rotateX(0deg) rotateY(0deg)'; // 초기 변형 설정
+                    nextSceneContainer.style.display = 'block'; 
+                    if(poolSceneElement) {
+                        poolSceneElement.style.opacity = 0; 
+                        setTimeout(() => { 
+                            poolSceneElement.style.opacity = 1;
+                            poolSceneElement.style.transform = 'translateZ(-30px) rotateX(0deg) rotateY(0deg)';
                             }, 100); 
-                     }
-                     startPoolAmbientSound(); 
-                     // 마우스 이동 리스너 추가
-                     poolMouseMoveHandlerRef = handlePoolMouseMove; // 참조 저장 (나중에 제거하기 위함)
-                     document.addEventListener('mousemove', poolMouseMoveHandlerRef);
+                    }
+                    startPoolAmbientSound(); 
+                    poolMouseMoveHandlerRef = handlePoolMouseMove;
+                    document.addEventListener('mousemove', poolMouseMoveHandlerRef);
                 }
                 document.title = "Unsettling Dream - Submerged"; 
             }
