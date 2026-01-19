@@ -135,4 +135,60 @@
                     score++;
                     document.getElementById('score').textContent = score;
                 }
-                if
+                if (50 + 20 > pipe.x && 50 < pipe.x + pipeWidth && (birdY < pipe.top || birdY + 20 > pipe.bottom)) endGame();
+            });
+
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+                let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
+                pipes.push({ x: canvas.width, top, bottom: top + pipeGap });
+            }
+
+            updateParticles();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPipes();
+            drawBird();
+            drawParticles();
+            requestAnimationFrame(update);
+        }
+
+        function spaceAction() {
+            if (!gameRunning) {
+                startGame();
+            } else {
+                birdVelocity = jump;
+                playASMRJumpSound();
+                createParticle(50, birdY);
+            }
+        }
+
+        function startGame() {
+            gameRunning = true;
+            document.getElementById('startScreen').style.display = 'none';
+            pipes = [];
+            birdY = 300;
+            birdVelocity = 0;
+            score = 0;
+            particles = [];
+            document.getElementById('score').textContent = '0';
+            update();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('score').textContent = '0'; // Reset score display on game over
+        }
+
+        // Spacebar event for both start and jump
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                spaceAction();
+            }
+        });
+
+        initAudio();
+    </script>
+</body>
+</html>
