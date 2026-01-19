@@ -1,190 +1,238 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Whisper</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: Arial; }
-        canvas { display: block; margin: 0 auto; }
-        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 48px; opacity: 0.7; animation: pulse 2s infinite; }
-        #score { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
-        #spacebar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; opacity: 0.7; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
-    </style>
-</head>
-<body>
-    <canvas id="gameCanvas"></canvas>
-    <div id="startScreen">SPACE</div>
-    <div id="score">0</div>
-    <div id="spacebar">SPACEBAR</div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 400;
-        canvas.height = 600;
-
-        let birdY = 300;
-        let birdVelocity = 0;
-        let gravity = 0.5;
-        let jump = -8;
-        let pipes = [];
-        let pipeGap = 150;
-        let pipeWidth = 50;
-        let pipeSpeed = 2;
-        let score = 0;
-        let gameRunning = false;
-        let particles = [];
-
-        // Softer ASMR-style shush/shak sound (gentle noise with low frequency)
-        let audioContext;
-        function initAudio() {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        function playASMRJumpSound() {
-            if (!audioContext) initAudio();
-            const noise = audioContext.createBufferSource();
-            const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.4, audioContext.sampleRate);
-            const data = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < data.length; i++) {
-                data[i] = (Math.random() * 2 - 1) * (1 - i / data.length); // Fade out for softness
-            }
-            noise.buffer = noiseBuffer;
-
-            const gainNode = audioContext.createGain();
-            const lowpass = audioContext.createBiquadFilter();
-            lowpass.type = 'lowpass';
-            lowpass.frequency.value = 500; // Low frequency for soft, shush-like sound
-
-            noise.connect(lowpass);
-            lowpass.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime); // Very low volume for ASMR
-            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4); // Gentle fade
-
-            noise.start(audioContext.currentTime);
-            noise.stop(audioContext.currentTime + 0.4);
-        }
-
-        function createParticle(x, y) {
-            for (let i = 0; i < 10; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 30,
-                    maxLife: 30
-                });
-            }
-        }
-
-        function updateParticles() {
-            particles = particles.filter(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life--;
-                p.vy += 0.2;
-                return p.life > 0;
-            });
-        }
-
-        function drawParticles() {
-            particles.forEach(p => {
-                ctx.save();
-                ctx.globalAlpha = p.life / p.maxLife;
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            });
-        }
-
-        function drawBird() {
-            ctx.fillStyle = '#FFD700';
-            ctx.beginPath();
-            ctx.arc(50, birdY, 20, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function drawPipes() {
-            ctx.fillStyle = '#228B22';
-            pipes.forEach(pipe => {
-                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-                ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
-            });
-        }
-
-        function update() {
-            if (!gameRunning) return;
-
-            birdVelocity += gravity;
-            birdY += birdVelocity;
-
-            if (birdY > canvas.height || birdY < 0) endGame();
-
-            pipes.forEach(pipe => {
-                pipe.x -= pipeSpeed;
-                if (pipe.x + pipeWidth < 0) {
-                    pipes.shift();
-                    score++;
-                    document.getElementById('score').textContent = score;
-                }
-                if (50 + 20 > pipe.x && 50 < pipe.x + pipeWidth && (birdY < pipe.top || birdY + 20 > pipe.bottom)) endGame();
-            });
-
-            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
-                let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
-                pipes.push({ x: canvas.width, top, bottom: top + pipeGap });
-            }
-
-            updateParticles();
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPipes();
-            drawBird();
-            drawParticles();
-            requestAnimationFrame(update);
-        }
-
-        function spaceAction(e) {
-            if (e) e.preventDefault();
-            if (!gameRunning) {
-                startGame();
-            } else {
-                birdVelocity = jump;
-                playASMRJumpSound();
-                createParticle(50, birdY);
-            }
-        }
-
-        function startGame() {
-            gameRunning = true;
-            document.getElementById('startScreen').style.display = 'none';
-            pipes = [];
-            birdY = 300;
-            birdVelocity = 0;
-            score = 0;
-            particles = [];
-            document.getElementById('score').textContent = '0';
-            update();
-        }
-
-        function endGame() {
-            gameRunning = false;
-            document.getElementById('startScreen').style.display = 'block';
-            document.getElementById('score').textContent = '0'; // Reset score display on game over
-        }
-
-        // Spacebar event for both start and jump
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') spaceAction(e);
-        });
-
-        initAudio();
-    </script>
-</body>
-</html>
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/index.html b/index.html
+index 84be117e0ea9d4daafff58afb4a966cb9c613158..d7d3fde5e48837b34b61585230d32c0e163f32fe 100644
+--- a/index.html
++++ b/index.html
+@@ -1,190 +1,46 @@
+ <!DOCTYPE html>
+ <html lang="ko">
+ <head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>Flappy Whisper</title>
+-    <style>
+-        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: Arial; }
+-        canvas { display: block; margin: 0 auto; }
+-        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 48px; opacity: 0.7; animation: pulse 2s infinite; }
+-        #score { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
+-        #spacebar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; opacity: 0.7; animation: pulse 2s infinite; }
+-        @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+-    </style>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>안개 관측소</title>
++  <link rel="stylesheet" href="style.css" />
+ </head>
+ <body>
+-    <canvas id="gameCanvas"></canvas>
+-    <div id="startScreen">SPACE</div>
+-    <div id="score">0</div>
+-    <div id="spacebar">SPACEBAR</div>
+-
+-    <script>
+-        const canvas = document.getElementById('gameCanvas');
+-        const ctx = canvas.getContext('2d');
+-        canvas.width = 400;
+-        canvas.height = 600;
+-
+-        let birdY = 300;
+-        let birdVelocity = 0;
+-        let gravity = 0.5;
+-        let jump = -8;
+-        let pipes = [];
+-        let pipeGap = 150;
+-        let pipeWidth = 50;
+-        let pipeSpeed = 2;
+-        let score = 0;
+-        let gameRunning = false;
+-        let particles = [];
+-
+-        // Softer ASMR-style shush/shak sound (gentle noise with low frequency)
+-        let audioContext;
+-        function initAudio() {
+-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+-        }
+-        function playASMRJumpSound() {
+-            if (!audioContext) initAudio();
+-            const noise = audioContext.createBufferSource();
+-            const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.4, audioContext.sampleRate);
+-            const data = noiseBuffer.getChannelData(0);
+-            for (let i = 0; i < data.length; i++) {
+-                data[i] = (Math.random() * 2 - 1) * (1 - i / data.length); // Fade out for softness
+-            }
+-            noise.buffer = noiseBuffer;
+-
+-            const gainNode = audioContext.createGain();
+-            const lowpass = audioContext.createBiquadFilter();
+-            lowpass.type = 'lowpass';
+-            lowpass.frequency.value = 500; // Low frequency for soft, shush-like sound
+-
+-            noise.connect(lowpass);
+-            lowpass.connect(gainNode);
+-            gainNode.connect(audioContext.destination);
+-
+-            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime); // Very low volume for ASMR
+-            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4); // Gentle fade
+-
+-            noise.start(audioContext.currentTime);
+-            noise.stop(audioContext.currentTime + 0.4);
+-        }
+-
+-        function createParticle(x, y) {
+-            for (let i = 0; i < 10; i++) {
+-                particles.push({
+-                    x: x,
+-                    y: y,
+-                    vx: (Math.random() - 0.5) * 10,
+-                    vy: (Math.random() - 0.5) * 10,
+-                    life: 30,
+-                    maxLife: 30
+-                });
+-            }
+-        }
+-
+-        function updateParticles() {
+-            particles = particles.filter(p => {
+-                p.x += p.vx;
+-                p.y += p.vy;
+-                p.life--;
+-                p.vy += 0.2;
+-                return p.life > 0;
+-            });
+-        }
+-
+-        function drawParticles() {
+-            particles.forEach(p => {
+-                ctx.save();
+-                ctx.globalAlpha = p.life / p.maxLife;
+-                ctx.fillStyle = '#FFD700';
+-                ctx.beginPath();
+-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+-                ctx.fill();
+-                ctx.restore();
+-            });
+-        }
+-
+-        function drawBird() {
+-            ctx.fillStyle = '#FFD700';
+-            ctx.beginPath();
+-            ctx.arc(50, birdY, 20, 0, Math.PI * 2);
+-            ctx.fill();
+-        }
+-
+-        function drawPipes() {
+-            ctx.fillStyle = '#228B22';
+-            pipes.forEach(pipe => {
+-                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+-                ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+-            });
+-        }
+-
+-        function update() {
+-            if (!gameRunning) return;
+-
+-            birdVelocity += gravity;
+-            birdY += birdVelocity;
+-
+-            if (birdY > canvas.height || birdY < 0) endGame();
+-
+-            pipes.forEach(pipe => {
+-                pipe.x -= pipeSpeed;
+-                if (pipe.x + pipeWidth < 0) {
+-                    pipes.shift();
+-                    score++;
+-                    document.getElementById('score').textContent = score;
+-                }
+-                if (50 + 20 > pipe.x && 50 < pipe.x + pipeWidth && (birdY < pipe.top || birdY + 20 > pipe.bottom)) endGame();
+-            });
+-
+-            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+-                let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
+-                pipes.push({ x: canvas.width, top, bottom: top + pipeGap });
+-            }
+-
+-            updateParticles();
+-
+-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+-            drawPipes();
+-            drawBird();
+-            drawParticles();
+-            requestAnimationFrame(update);
+-        }
+-
+-        function spaceAction(e) {
+-            if (e) e.preventDefault();
+-            if (!gameRunning) {
+-                startGame();
+-            } else {
+-                birdVelocity = jump;
+-                playASMRJumpSound();
+-                createParticle(50, birdY);
+-            }
+-        }
+-
+-        function startGame() {
+-            gameRunning = true;
+-            document.getElementById('startScreen').style.display = 'none';
+-            pipes = [];
+-            birdY = 300;
+-            birdVelocity = 0;
+-            score = 0;
+-            particles = [];
+-            document.getElementById('score').textContent = '0';
+-            update();
+-        }
+-
+-        function endGame() {
+-            gameRunning = false;
+-            document.getElementById('startScreen').style.display = 'block';
+-            document.getElementById('score').textContent = '0'; // Reset score display on game over
+-        }
+-
+-        // Spacebar event for both start and jump
+-        document.addEventListener('keydown', (e) => {
+-            if (e.code === 'Space') spaceAction(e);
+-        });
+-
+-        initAudio();
+-    </script>
++  <main class="screen">
++    <header class="hero">
++      <p class="hero__tag">fogbound log</p>
++      <h1>안개 관측소</h1>
++      <p class="hero__line">
++        감지되지 않는 도시. 무너진 관측소. 남은 것은 작은 코일과 희미한 신호뿐.
++      </p>
++    </header>
++
++    <section class="story" id="story"></section>
++
++    <section class="stats">
++      <div>
++        <span>빛</span>
++        <strong id="glow">0</strong>
++      </div>
++      <div>
++        <span>온기</span>
++        <strong id="warmth">0</strong>
++      </div>
++      <div>
++        <span>신호</span>
++        <strong id="signal">0</strong>
++      </div>
++    </section>
++
++    <section class="actions" id="actions"></section>
++
++    <section class="log">
++      <h2>관측 기록</h2>
++      <ul id="log"></ul>
++    </section>
++  </main>
++
++  <script src="game.js"></script>
+ </body>
+ </html>
+ 
+EOF
+)
