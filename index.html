@@ -37,37 +37,35 @@
         let gameRunning = false;
         let particles = [];
 
-        // ASMR-style soft whoosh sound
+        // Softer ASMR-style shush/shak sound (gentle noise with low frequency)
         let audioContext;
         function initAudio() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         function playASMRJumpSound() {
             if (!audioContext) initAudio();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
             const noise = audioContext.createBufferSource();
-            const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.3, audioContext.sampleRate);
+            const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.4, audioContext.sampleRate);
             const data = noiseBuffer.getChannelData(0);
             for (let i = 0; i < data.length; i++) {
-                data[i] = Math.random() * 2 - 1;
+                data[i] = (Math.random() * 2 - 1) * (1 - i / data.length); // Fade out for softness
             }
             noise.buffer = noiseBuffer;
 
-            oscillator.connect(gainNode);
-            noise.connect(gainNode);
+            const gainNode = audioContext.createGain();
+            const lowpass = audioContext.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 500; // Low frequency for soft, shush-like sound
+
+            noise.connect(lowpass);
+            lowpass.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
-            oscillator.frequency.value = 350; // Low, soft frequency for ASMR
-            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime); // Very low volume for ASMR
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4); // Gentle fade
 
-            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3); // Gentle fade out
-
-            oscillator.start(audioContext.currentTime);
             noise.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
-            noise.stop(audioContext.currentTime + 0.3);
+            noise.stop(audioContext.currentTime + 0.4);
         }
 
         function createParticle(x, y) {
@@ -152,7 +150,8 @@
             requestAnimationFrame(update);
         }
 
-        function spaceAction() {
+        function spaceAction(e) {
+            if (e) e.preventDefault();
             if (!gameRunning) {
                 startGame();
             } else {
@@ -182,10 +181,7 @@
 
         // Spacebar event for both start and jump
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                spaceAction();
-            }
+            if (e.code === 'Space') spaceAction(e);
         });
 
         initAudio();
