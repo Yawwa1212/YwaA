@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Whisper - ASMR Flappy Bird</title>
+    <title>Flappy Whisper</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: Arial; }
         canvas { display: block; margin: 0 auto; }
         #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
         #score { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
+        #spacebar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; opacity: 0.7; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="startScreen">
         <h1>Flappy Whisper</h1>
-        <p>ASMR 스타일 Flappy Bird! 클릭/탭으로 날아보세요.</p>
-        <button onclick="startGame()">시작</button>
+        <button onclick="startGame()">SPACE</button>
     </div>
-    <div id="score">점수: 0</div>
+    <div id="score">0</div>
+    <div id="spacebar">SPACEBAR</div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -36,6 +38,61 @@
         let pipeSpeed = 2;
         let score = 0;
         let gameRunning = false;
+        let particles = [];
+
+        // Web Audio API for sound effect
+        let audioContext;
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        function playJumpSound() {
+            if (!audioContext) initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function createParticle(x, y) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 30,
+                    maxLife: 30
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                p.vy += 0.2; // gravity for particles
+                return p.life > 0;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.life / p.maxLife;
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
 
         function drawBird() {
             ctx.fillStyle = '#FFD700';
@@ -65,7 +122,7 @@
                 if (pipe.x + pipeWidth < 0) {
                     pipes.shift();
                     score++;
-                    document.getElementById('score').textContent = `점수: ${score}`;
+                    document.getElementById('score').textContent = score;
                 }
                 if (50 + 20 > pipe.x && 50 < pipe.x + pipeWidth && (birdY < pipe.top || birdY + 20 > pipe.bottom)) endGame();
             });
@@ -75,10 +132,21 @@
                 pipes.push({ x: canvas.width, top, bottom: top + pipeGap });
             }
 
+            updateParticles();
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBird();
             drawPipes();
+            drawBird();
+            drawParticles();
             requestAnimationFrame(update);
+        }
+
+        function spaceJump() {
+            if (gameRunning) {
+                birdVelocity = jump;
+                playJumpSound();
+                createParticle(50, birdY);
+            }
         }
 
         function startGame() {
@@ -88,18 +156,26 @@
             birdY = 300;
             birdVelocity = 0;
             score = 0;
-            document.getElementById('score').textContent = `점수: 0`;
+            particles = [];
+            document.getElementById('score').textContent = '0';
             update();
         }
 
         function endGame() {
             gameRunning = false;
-            document.getElementById('startScreen').innerHTML = `<h1>게임 오버</h1><p>점수: ${score}</p><button onclick="startGame()">다시 시작</button>`;
+            document.getElementById('startScreen').innerHTML = `<h1>Game Over</h1><p>${score}</p><button onclick="startGame()">SPACE</button>`;
             document.getElementById('startScreen').style.display = 'block';
         }
 
-        canvas.addEventListener('click', () => { if (gameRunning) birdVelocity = jump; });
-        canvas.addEventListener('touchstart', () => { if (gameRunning) birdVelocity = jump; });
+        // Spacebar event
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                spaceJump();
+            }
+        });
+
+        initAudio();
     </script>
 </body>
 </html>
