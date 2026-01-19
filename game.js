@@ -32,6 +32,41 @@ let reduceMotion = false;
 let fxLow = false;
 let eventActive = false;
 
+// -----------------------------------------------------------------------------
+// Audio assets
+//
+// Preload audio assets used by the game. These files should exist in the same
+// directory as index.html. If a file fails to load or isn't present, the game
+// will gracefully fall back to synthesized tones via playTone(). Feel free to
+// replace these file names with actual audio files in your repository such as
+// `dice roll.mp3`, `ㅋㅋㅋ비융신ㅋㅋㅋ.wav`, etc. The user can add any mp3 or wav
+// files to the project and reference them here.
+const audioAssets = {
+  spin: new Audio("dice roll.mp3"),
+  win: new Audio("win.mp3"),
+  lose: new Audio("ㅋㅋㅋ비융신ㅋㅋㅋ.wav"),
+  organ: new Audio("organ_loss.mp3"),
+  party: new Audio("party.mp3")
+};
+
+function playSound(type) {
+  if (!audioEnabled) return;
+  const snd = audioAssets[type];
+  if (snd) {
+    try {
+      snd.currentTime = 0;
+    } catch (err) {
+      // ignore if resetting currentTime isn't allowed
+    }
+    snd.play().catch(() => {
+      // Autoplay might be blocked; in that case, fall back to oscillator
+      playTone(type === "party" ? "party" : type === "organ" ? "impact" : "default");
+    });
+  } else {
+    playTone(type === "party" ? "party" : type === "organ" ? "impact" : "default");
+  }
+}
+
 const elements = {
   cash: document.getElementById("cash"),
   debt: document.getElementById("debt"),
@@ -248,7 +283,7 @@ function handleRepossession(reason) {
   state.organs -= 1;
   state.corruption += 1;
   updateStatus(`회수 발생: ${reason}. ORGAN TOKEN -1`, "glitch");
-  playTone("impact");
+  playSound("organ");
   addHistory(`⚠️ 회수: ${reason}`);
 
   if (state.organs <= 0) {
@@ -325,7 +360,7 @@ function checkPartyMode(multiplier) {
   if (state.cash >= 50000000 || (multiplier === 10 && state.lastMultiplier === 10)) {
     state.partyTurns = 3;
     updateStatus("도파민 환각 파티 발동!", "party");
-    playTone("party");
+    playSound("party");
   }
 }
 
@@ -379,6 +414,10 @@ function spinRoulette() {
     return;
   }
 
+  // Play a spin sound and animate the wheel before determining the outcome
+  playSound("spin");
+  startSpinAnimation();
+
   const outcome = pickMultiplier();
   const winnings = Math.floor(bet * outcome.value);
   const net = winnings - bet;
@@ -389,12 +428,16 @@ function spinRoulette() {
   if (net > 0) {
     state.streak += 1;
     updateStatus(`승리! ${outcome.label} → +${formatCurrency(net)} 획득.`);
+    playSound("win");
   } else if (net === 0) {
     state.streak = 0;
     updateStatus(`본전. ${outcome.label} 결과는 무미건조.`);
+    // neutral spin: replay spin sound
+    playSound("spin");
   } else {
     state.streak = 0;
     updateStatus(`패배. ${outcome.label}로 ${formatCurrency(Math.abs(net))} 손실.`, "glitch");
+    playSound("lose");
   }
 
   if (net < 0 && state.cash === 0 && state.debt >= MAX_DEBT) {
@@ -412,6 +455,22 @@ function spinRoulette() {
   maybeTriggerLoanShark();
   updateUI();
   updateLeaderboard();
+}
+
+// -----------------------------------------------------------------------------
+// Animation helpers
+//
+// Adds a spinning animation class to the roulette wheel for the duration of the
+// spin. The CSS defines the keyframes and duration. After the animation
+// completes the class is removed so subsequent spins start from a consistent
+// position.
+function startSpinAnimation() {
+  const wheelEl = elements.rouletteWheel;
+  if (!wheelEl) return;
+  wheelEl.classList.add("spinning");
+  setTimeout(() => {
+    wheelEl.classList.remove("spinning");
+  }, 2000);
 }
 
 function adjustBet(amount) {
