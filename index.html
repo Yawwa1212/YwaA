@@ -6,50 +6,109 @@
   <title>GANG WON LAND</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="corruption-0">
   <main class="screen" id="screen">
     <header class="hero">
-      <p class="hero__tag">roulette fever</p>
+      <p class="hero__tag">cyberpunk roulette</p>
       <h1>GANG WON LAND</h1>
-      <p class="hero__line" id="heroLine">빛나는 룰렛 테이블 위, 한 판만 더는 끝이 없다.</p>
+      <p class="hero__line" id="heroLine">네온 축제가 당신을 부른다. 원클릭 룰렛을 돌려보자.</p>
+      <p class="hero__online">Online: Local Leaderboard</p>
     </header>
 
-    <section class="status">
+    <section class="stats">
       <div>
-        <span>보유 자금</span>
+        <span>현금</span>
         <strong id="cash">₩10,000,000</strong>
       </div>
       <div>
         <span>대출 잔액</span>
-        <strong id="loan">₩0</strong>
+        <strong id="debt">₩0</strong>
       </div>
       <div>
-        <span>장기 잔여</span>
-        <strong id="organs">3</strong>
+        <span>부품 토큰</span>
+        <strong id="modules">5</strong>
+      </div>
+      <div>
+        <span>타락 단계</span>
+        <strong id="corruption">0</strong>
+      </div>
+      <div>
+        <span>연승</span>
+        <strong id="streak">0</strong>
       </div>
     </section>
 
     <section class="roulette">
-      <div class="roulette__wheel" id="wheel">★</div>
-      <div class="roulette__result" id="result">룰렛을 돌려 보세요.</div>
+      <div class="roulette__wheel" id="wheel">◆</div>
+      <div class="roulette__result" id="result">SPIN 버튼을 눌러 룰렛을 시작하세요.</div>
+      <div class="roulette__odds" id="odds"></div>
+    </section>
+
+    <section class="betting">
+      <div class="betting__control">
+        <button id="betDown" aria-label="베팅 감소">-</button>
+        <div class="betting__amount">
+          <span>베팅</span>
+          <strong id="betAmount">₩1,000,000</strong>
+        </div>
+        <button id="betUp" aria-label="베팅 증가">+</button>
+      </div>
+      <input
+        id="betSlider"
+        type="range"
+        min="100000"
+        max="5000000"
+        step="100000"
+        value="1000000"
+      />
     </section>
 
     <section class="actions">
-      <button id="spin">룰렛 돌리기</button>
+      <button id="spin">SPIN</button>
       <button id="borrow">대출 받기 (₩5,000,000)</button>
       <button id="repay">대출 상환 (₩5,000,000)</button>
     </section>
 
-    <section class="event" id="event"></section>
+    <section class="event" id="event">
+      <div class="event__text" id="eventText">사채업자 소식이 뜨기 전에 숨을 고르세요.</div>
+      <div class="event__choices" id="eventChoices"></div>
+    </section>
+
+    <section class="settings">
+      <label>
+        <input type="checkbox" id="effectsToggle" checked />
+        시각 효과 켜기
+      </label>
+      <label>
+        <input type="checkbox" id="motionToggle" />
+        Reduce motion
+      </label>
+      <label>
+        볼륨
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.6" />
+      </label>
+    </section>
+
+    <section class="leaderboard">
+      <h2>로컬 리더보드</h2>
+      <div class="leaderboard__entry">
+        <label>닉네임</label>
+        <input id="nickname" type="text" maxlength="12" placeholder="NEON" />
+        <button id="saveScore">저장</button>
+      </div>
+      <ul id="leaderboardList"></ul>
+    </section>
 
     <section class="log">
-      <h2>기록</h2>
+      <h2>스핀 로그 (최근 10회)</h2>
       <ul id="log"></ul>
     </section>
-  </main>
 
-  <audio id="organSound" src="dice-throw-38476.mp3" preload="auto"></audio>
-  <audio id="partySound" src="dice-142528.mp3" preload="auto"></audio>
+    <section class="footer">
+      <button id="reset">Reset</button>
+      <button id="hardReset">Hard Reset (로컬 삭제)</button>
+    </section>
+  </main>
 
   <script src="game.js"></script>
 </body>
