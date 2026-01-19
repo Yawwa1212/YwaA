@@ -1,32 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>1초 멈추기</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Whisper - ASMR Flappy Bird</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: Arial; }
+        canvas { display: block; margin: 0 auto; }
+        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        #score { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
+    </style>
 </head>
 <body>
-  <main class="wrap">
-    <h1>1초 멈추기</h1>
-    <p>딱 1초에 멈춰라</p>
-
-    <div id="time">0.000</div>
-
-    <button id="tap">탭해서 시작 / 멈추기</button>
-
-    <div id="result"></div>
-
-    <div id="rankBox" hidden>
-      <p id="rankMsg"></p>
-      <input id="nickname" placeholder="닉네임 입력" maxlength="12"/>
-      <button id="submitRank">랭킹 등록</button>
+    <canvas id="gameCanvas"></canvas>
+    <div id="startScreen">
+        <h1>Flappy Whisper</h1>
+        <p>ASMR 스타일 Flappy Bird! 클릭/탭으로 날아보세요.</p>
+        <button onclick="startGame()">시작</button>
     </div>
+    <div id="score">점수: 0</div>
 
-    <h2>🏆 TOP 10</h2>
-    <ol id="rankList"></ol>
-  </main>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 400;
+        canvas.height = 600;
 
-  <script type="module" src="game.js"></script>
+        let birdY = 300;
+        let birdVelocity = 0;
+        let gravity = 0.5;
+        let jump = -8;
+        let pipes = [];
+        let pipeGap = 150;
+        let pipeWidth = 50;
+        let pipeSpeed = 2;
+        let score = 0;
+        let gameRunning = false;
+
+        function drawBird() {
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(50, birdY, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = '#228B22';
+            pipes.forEach(pipe => {
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+                ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+            });
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            birdVelocity += gravity;
+            birdY += birdVelocity;
+
+            if (birdY > canvas.height || birdY < 0) endGame();
+
+            pipes.forEach(pipe => {
+                pipe.x -= pipeSpeed;
+                if (pipe.x + pipeWidth < 0) {
+                    pipes.shift();
+                    score++;
+                    document.getElementById('score').textContent = `점수: ${score}`;
+                }
+                if (50 + 20 > pipe.x && 50 < pipe.x + pipeWidth && (birdY < pipe.top || birdY + 20 > pipe.bottom)) endGame();
+            });
+
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+                let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
+                pipes.push({ x: canvas.width, top, bottom: top + pipeGap });
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBird();
+            drawPipes();
+            requestAnimationFrame(update);
+        }
+
+        function startGame() {
+            gameRunning = true;
+            document.getElementById('startScreen').style.display = 'none';
+            pipes = [];
+            birdY = 300;
+            birdVelocity = 0;
+            score = 0;
+            document.getElementById('score').textContent = `점수: 0`;
+            update();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            document.getElementById('startScreen').innerHTML = `<h1>게임 오버</h1><p>점수: ${score}</p><button onclick="startGame()">다시 시작</button>`;
+            document.getElementById('startScreen').style.display = 'block';
+        }
+
+        canvas.addEventListener('click', () => { if (gameRunning) birdVelocity = jump; });
+        canvas.addEventListener('touchstart', () => { if (gameRunning) birdVelocity = jump; });
+    </script>
 </body>
 </html>
