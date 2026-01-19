@@ -1,30 +1,54 @@
 const state = {
-  glow: 0,
-  warmth: 0,
-  signal: 0,
-  scrap: 0,
-  food: 0,
-  relic: 0,
-  phase: 0,
-  tick: 0,
+  cash: 10000000,
+  loan: 0,
+  organs: 3,
+  spins: 0,
+  mode: "party",
 };
 
-const story = document.getElementById("story");
-const actions = document.getElementById("actions");
+const MAX_LOAN = 30000000;
+const SPIN_COST = 1000000;
+const LOAN_UNIT = 5000000;
+
+const cashEl = document.getElementById("cash");
+const loanEl = document.getElementById("loan");
+const organsEl = document.getElementById("organs");
+const wheelEl = document.getElementById("wheel");
+const resultEl = document.getElementById("result");
+const eventEl = document.getElementById("event");
 const logList = document.getElementById("log");
-const glowEl = document.getElementById("glow");
-const warmthEl = document.getElementById("warmth");
-const signalEl = document.getElementById("signal");
+const heroLine = document.getElementById("heroLine");
+const screen = document.getElementById("screen");
+
+const spinBtn = document.getElementById("spin");
+const borrowBtn = document.getElementById("borrow");
+const repayBtn = document.getElementById("repay");
+
+const organSound = document.getElementById("organSound");
+const partySound = document.getElementById("partySound");
 
 const logEntries = [];
 
-const phaseText = [
-  "관측소는 여전히 잠들어 있다. 작은 코일을 점화해 빛을 확보해야 한다.",
-  "빛이 돌기 시작했다. 폐허를 뒤져 부품과 식량을 모아야 한다.",
-  "모은 부품으로 열교환기를 조립하면 내부 온도를 유지할 수 있다.",
-  "온기가 안정되면 외부로 신호를 송출할 수 있다.",
-  "응답이 오기 시작했다. 남은 자원을 정리하며 신호의 의미를 해독하자.",
+const wheelOutcomes = [
+  { label: "대승", min: 6000000, max: 12000000 },
+  { label: "승리", min: 2000000, max: 7000000 },
+  { label: "무난", min: -1000000, max: 2000000 },
+  { label: "패배", min: -7000000, max: -2000000 },
+  { label: "대패", min: -12000000, max: -6000000 },
 ];
+
+const collectorEvents = [
+  "사채업자가 문을 걷어차고 들어왔다. " +
+    "이자 폭탄으로 대출이 늘어났다.",
+  "사채업자가 웃으며 말했다. " +
+    "당분간 숨 좀 쉬게 해주겠다며 빚을 동결했다.",
+  "사채업자가 룰렛을 쳐다본다. " +
+    "오늘 밤은 운이 보인다고 속삭였다.",
+];
+
+function formatMoney(value) {
+  return `₩${value.toLocaleString("ko-KR")}`;
+}
 
 function addLog(text) {
   const stamp = new Date().toLocaleTimeString("ko-KR", {
@@ -37,159 +61,178 @@ function addLog(text) {
 }
 
 function updateUI() {
-  glowEl.textContent = state.glow;
-  warmthEl.textContent = state.warmth;
-  signalEl.textContent = state.signal;
-  story.textContent = phaseText[state.phase];
-}
+  cashEl.textContent = formatMoney(state.cash);
+  loanEl.textContent = formatMoney(state.loan);
+  organsEl.textContent = state.organs;
 
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
+  borrowBtn.disabled = state.loan >= MAX_LOAN;
+  repayBtn.disabled = state.loan === 0 || state.cash < LOAN_UNIT;
+  spinBtn.disabled = state.cash < SPIN_COST && state.loan >= MAX_LOAN;
 
-function createButton({ id, label, onClick, disabled }) {
-  const button = document.createElement("button");
-  button.id = id;
-  button.textContent = label;
-  button.disabled = disabled;
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function renderActions() {
-  actions.innerHTML = "";
-
-  actions.appendChild(
-    createButton({
-      id: "ignite",
-      label: "코일 점화",
-      onClick: ignite,
-      disabled: state.glow >= 6,
-    })
+  screen.classList.remove(
+    "screen--dim",
+    "screen--dark",
+    "screen--horror",
+    "screen--trip"
   );
 
-  actions.appendChild(
-    createButton({
-      id: "scavenge",
-      label: "안개 골목 수색",
-      onClick: scavenge,
-      disabled: state.glow < 2,
-    })
+  if (state.mode === "dim") screen.classList.add("screen--dim");
+  if (state.mode === "dark") screen.classList.add("screen--dark");
+  if (state.mode === "horror") screen.classList.add("screen--horror");
+  if (state.mode === "trip") screen.classList.add("screen--trip");
+}
+
+function updateMood() {
+  if (state.cash >= 40000000) {
+    state.mode = "trip";
+    heroLine.textContent = "도파민이 폭주한다. 모든 빛이 춤추며 환각 파티가 열린다.";
+    glitchText(true);
+    partySound.currentTime = 0;
+    partySound.play();
+    return;
+  }
+
+  if (state.organs === 2) {
+    state.mode = "dim";
+    heroLine.textContent = "빛이 줄어든다. 룰렛이 흐릿해진다.";
+    glitchText(false);
+    return;
+  }
+
+  if (state.organs === 1) {
+    state.mode = "dark";
+    heroLine.textContent = "어둠이 내려앉는다. 룰렛이 잘 보이지 않는다.";
+    glitchText(false);
+    return;
+  }
+
+  if (state.organs === 0) {
+    state.mode = "horror";
+    heroLine.textContent = "모든 소리가 끊긴다. 글씨가 부서진다.";
+    glitchText(true);
+    organSound.currentTime = 0;
+    organSound.play();
+    return;
+  }
+
+  state.mode = "party";
+  heroLine.textContent = "빛나는 룰렛 테이블 위, 한 판만 더는 끝이 없다.";
+  glitchText(false);
+}
+
+function glitchText(active) {
+  [heroLine, resultEl, eventEl].forEach((el) => {
+    el.classList.toggle("glitch", active);
+  });
+}
+
+function spinWheel() {
+  if (state.cash < SPIN_COST) {
+    if (state.loan < MAX_LOAN) {
+      borrowLoan();
+    } else {
+      resultEl.textContent = "더 이상 빌릴 수 없다. 돈이 없다.";
+      addLog("스핀 비용이 없다. 룰렛은 멈췄다.");
+      return;
+    }
+  }
+
+  state.cash -= SPIN_COST;
+  const outcome = wheelOutcomes[Math.floor(Math.random() * wheelOutcomes.length)];
+  const change = Math.floor(
+    outcome.min + Math.random() * (outcome.max - outcome.min)
   );
+  state.cash += change;
+  state.spins += 1;
 
-  actions.appendChild(
-    createButton({
-      id: "heater",
-      label: "열교환기 조립",
-      onClick: buildHeater,
-      disabled: state.scrap < 6,
-    })
-  );
+  wheelEl.style.transform = `rotate(${Math.random() * 720}deg)`;
+  resultEl.textContent = `${outcome.label}! ${formatMoney(change)}`;
+  addLog(`룰렛 ${outcome.label}: ${formatMoney(change)} 변화.`);
 
-  actions.appendChild(
-    createButton({
-      id: "signal",
-      label: "신호 송출",
-      onClick: sendSignal,
-      disabled: state.warmth < 4,
-    })
-  );
+  if (state.cash < 0) {
+    triggerOrganLoss();
+  }
 
-  actions.appendChild(
-    createButton({
-      id: "decode",
-      label: "응답 해독",
-      onClick: decodeSignal,
-      disabled: state.signal < 3,
-    })
-  );
+  if (state.spins % 4 === 0) {
+    triggerCollectorEvent();
+  }
+
+  updateMood();
+  updateUI();
 }
 
-function ignite() {
-  state.glow = clamp(state.glow + 2, 0, 8);
-  addLog("코일이 깨어나 푸른 빛이 관측소를 채웠다.");
-  if (state.phase === 0 && state.glow >= 2) {
-    state.phase = 1;
+function borrowLoan() {
+  if (state.loan >= MAX_LOAN) {
+    eventEl.textContent = "더 이상 대출이 되지 않는다.";
+    return;
   }
+  state.loan = Math.min(state.loan + LOAN_UNIT, MAX_LOAN);
+  state.cash += LOAN_UNIT;
+  eventEl.textContent = "대출금이 들어왔다. 숨이 조금 트인다.";
+  addLog("대출 실행: ₩5,000,000");
+  updateMood();
   updateUI();
-  renderActions();
 }
 
-function scavenge() {
-  const scrapGain = 2 + Math.floor(Math.random() * 2);
-  const foodGain = 1 + Math.floor(Math.random() * 2);
-  state.scrap += scrapGain;
-  state.food += foodGain;
-  addLog(`금속 부품 ${scrapGain}, 건조식량 ${foodGain}을 확보했다.`);
-  if (state.phase === 1 && state.scrap >= 6) {
-    state.phase = 2;
-  }
+function repayLoan() {
+  if (state.loan === 0 || state.cash < LOAN_UNIT) return;
+  state.loan -= LOAN_UNIT;
+  state.cash -= LOAN_UNIT;
+  eventEl.textContent = "빚을 조금 정리했다. 하지만 룰렛의 소리가 남아 있다.";
+  addLog("대출 상환: ₩5,000,000");
+  updateMood();
   updateUI();
-  renderActions();
 }
 
-function buildHeater() {
-  if (state.scrap < 6) return;
-  state.scrap -= 6;
-  state.warmth = clamp(state.warmth + 3, 0, 8);
-  addLog("열교환기가 돌아가며 내부에 잔열이 유지된다.");
-  if (state.phase === 2 && state.warmth >= 4) {
-    state.phase = 3;
+function triggerOrganLoss() {
+  if (state.loan < MAX_LOAN) {
+    borrowLoan();
+    return;
   }
-  updateUI();
-  renderActions();
+
+  if (state.organs > 0) {
+    state.organs -= 1;
+    state.cash = 0;
+    eventEl.textContent = "대출 한도도 끝났다. 장기 하나를 떼었다.";
+    addLog("장기 하나가 사라졌다. 룰렛이 흐릿해진다.");
+    organSound.currentTime = 0;
+    organSound.play();
+  }
+
+  if (state.organs === 0) {
+    resultEl.textContent = "끝.끝.끝.";
+  }
 }
 
-function sendSignal() {
-  if (state.warmth < 4) return;
-  const success = Math.random() > 0.4;
-  state.signal = clamp(state.signal + 1, 0, 6);
-  if (success) {
-    state.relic += 1;
-    addLog("안개 속에서 짧은 응답이 도착했다. 패턴이 남아 있다.");
-  } else {
-    addLog("신호가 흩어졌다. 주파수를 다시 맞춘다.");
-  }
-  if (state.phase === 3 && state.signal >= 3) {
-    state.phase = 4;
-  }
-  updateUI();
-  renderActions();
-}
+function triggerCollectorEvent() {
+  const eventIndex = Math.floor(Math.random() * collectorEvents.length);
+  const message = collectorEvents[eventIndex];
+  eventEl.textContent = message;
+  addLog(message);
 
-function decodeSignal() {
-  if (state.signal < 3) return;
-  const outcome = Math.random();
-  if (outcome > 0.5) {
-    addLog("도시의 생존자가 남긴 좌표를 해독했다. 희망이 보인다.");
-  } else {
-    addLog("응답은 잔향에 불과했다. 다른 채널을 탐색해야 한다.");
+  if (eventIndex === 0) {
+    const penalty = 2000000;
+    state.loan = Math.min(state.loan + penalty, MAX_LOAN);
   }
-  state.signal = clamp(state.signal - 1, 0, 6);
-  updateUI();
-  renderActions();
-}
 
-function tick() {
-  state.tick += 1;
-  if (state.tick % 4 === 0) {
-    state.glow = clamp(state.glow - 1, 0, 8);
+  if (eventIndex === 1) {
+    const relief = Math.min(2000000, state.loan);
+    state.loan -= relief;
   }
-  if (state.glow === 0 && state.tick % 3 === 0) {
-    state.warmth = clamp(state.warmth - 1, 0, 8);
+
+  if (eventIndex === 2) {
+    state.cash += 1000000;
   }
-  if (state.warmth === 0 && state.tick % 6 === 0) {
-    addLog("기온이 빠르게 내려간다. 코일을 재점화해야 한다.");
-  }
-  updateUI();
-  renderActions();
 }
 
 function start() {
-  addLog("무전기가 희미하게 깜빡인다. 코일을 점화하라.");
+  eventEl.textContent = "화려한 네온이 당신을 부른다. 룰렛을 돌려보자.";
+  addLog("게임 시작: GANG WON LAND");
   updateUI();
-  renderActions();
-  setInterval(tick, 1000);
 }
+
+spinBtn.addEventListener("click", spinWheel);
+borrowBtn.addEventListener("click", borrowLoan);
+repayBtn.addEventListener("click", repayLoan);
 
 start();
