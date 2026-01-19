@@ -13,6 +13,26 @@ const multipliers = [
   { label: "10x", value: 10, weight: 6 }
 ];
 
+const audioFiles = [
+  "070766_2d6-rolling-dice-35977.mp3",
+  "070921_2d6-rolling-dice-37050.mp3",
+  "075220_2d6-rolling-dice-35981.mp3",
+  "rolling-dice-2-102706.mp3",
+  "dice-142528.mp3",
+  "dice-95077.mp3",
+  "dice-throw-38476.mp3",
+  "dice 1-dice-roll-201898 복사본.mp3",
+  "dice 2-dice-roll-201898 복사본.mp3",
+  "dice 3-dice-roll-201898 복사본.mp3",
+  "dice 4-dice-roll-201898 복사본.mp3",
+  "dice 5-dice-roll-201898 복사본.mp3",
+  "dice 6-dice-roll-201898 복사본.mp3",
+  "dice 7-dice-roll-201898 복사본.mp3",
+  "dice 8-dice-roll-201898 복사본.mp3",
+  "dice 9-dice-roll-201898 복사본.mp3",
+  "Take1-1_ㅋㅋㅋㅋㅋ피융신ㅋㅋㅋ_2025-06-01.wav"
+];
+
 const state = {
   cash: START_CASH,
   debt: 0,
@@ -31,6 +51,9 @@ let audioEnabled = true;
 let reduceMotion = false;
 let fxLow = false;
 let eventActive = false;
+let spinInProgress = false;
+let soundIndex = 0;
+let rouletteSlots = [];
 
 const elements = {
   cash: document.getElementById("cash"),
@@ -48,6 +71,7 @@ const elements = {
   repayLoan: document.getElementById("repay-loan"),
   reset: document.getElementById("reset"),
   hardReset: document.getElementById("hard-reset"),
+  roulette: document.getElementById("roulette"),
   rouletteWheel: document.getElementById("roulette-wheel"),
   toggleAudio: document.getElementById("toggle-audio"),
   toggleMotion: document.getElementById("toggle-motion"),
@@ -135,13 +159,16 @@ function renderLeaderboard() {
 
 function renderRoulette() {
   elements.rouletteWheel.innerHTML = "";
+  rouletteSlots = [];
   multipliers.forEach((slot) => {
     const div = document.createElement("div");
     div.className = "roulette-slot";
     div.textContent = slot.label;
+    div.dataset.value = String(slot.value);
     if (slot.value >= 5) {
       div.classList.add("hot");
     }
+    rouletteSlots.push(div);
     elements.rouletteWheel.appendChild(div);
   });
 }
@@ -221,27 +248,18 @@ function pickMultiplier() {
 }
 
 function playTone(type) {
-  if (!audioEnabled) return;
-  const context = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  oscillator.type = "sine";
-
-  if (type === "party") {
-    oscillator.frequency.value = 660;
-    gain.gain.value = 0.08;
-  } else if (type === "impact") {
-    oscillator.frequency.value = 180;
-    gain.gain.value = 0.15;
+  if (!audioEnabled || audioFiles.length === 0) return;
+  const file = audioFiles[soundIndex % audioFiles.length];
+  soundIndex += 1;
+  const audio = new Audio(encodeURI(file));
+  if (type === "impact") {
+    audio.volume = fxLow ? 0.25 : 0.5;
+  } else if (type === "party") {
+    audio.volume = fxLow ? 0.3 : 0.6;
   } else {
-    oscillator.frequency.value = 440;
-    gain.gain.value = 0.06;
+    audio.volume = fxLow ? 0.2 : 0.4;
   }
-
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.25);
+  audio.play().catch(() => {});
 }
 
 function handleRepossession(reason) {
@@ -362,7 +380,7 @@ function resetGame(hard = false) {
 }
 
 function spinRoulette() {
-  if (eventActive) return;
+  if (eventActive || spinInProgress) return;
 
   const bet = Number(elements.betInput.value);
   if (!bet || bet < 100000) {
@@ -379,22 +397,44 @@ function spinRoulette() {
     return;
   }
 
+  spinInProgress = true;
+  elements.spin.disabled = true;
+  elements.roulette.classList.add("spinning");
+  playTone("spin");
+
   const outcome = pickMultiplier();
+  const spinDuration = reduceMotion ? 250 : 900;
+
+  setTimeout(() => {
+    resolveSpin(outcome, bet);
+  }, spinDuration);
+}
+
+function resolveSpin(outcome, bet) {
   const winnings = Math.floor(bet * outcome.value);
   const net = winnings - bet;
 
   state.cash = state.cash - bet + winnings;
   state.spinCount += 1;
 
+  rouletteSlots.forEach((slot) => slot.classList.remove("result"));
+  const selected = rouletteSlots.find((slot) => Number(slot.dataset.value) === outcome.value);
+  if (selected) {
+    selected.classList.add("result");
+  }
+
   if (net > 0) {
     state.streak += 1;
     updateStatus(`승리! ${outcome.label} → +${formatCurrency(net)} 획득.`);
+    playTone("party");
   } else if (net === 0) {
     state.streak = 0;
     updateStatus(`본전. ${outcome.label} 결과는 무미건조.`);
+    playTone("spin");
   } else {
     state.streak = 0;
     updateStatus(`패배. ${outcome.label}로 ${formatCurrency(Math.abs(net))} 손실.`, "glitch");
+    playTone("impact");
   }
 
   if (net < 0 && state.cash === 0 && state.debt >= MAX_DEBT) {
@@ -408,6 +448,10 @@ function spinRoulette() {
   if (state.partyTurns > 0) {
     state.partyTurns -= 1;
   }
+
+  elements.roulette.classList.remove("spinning");
+  spinInProgress = false;
+  elements.spin.disabled = false;
 
   maybeTriggerLoanShark();
   updateUI();

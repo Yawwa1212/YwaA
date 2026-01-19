@@ -81,6 +81,22 @@ body::before {
   position: relative;
 }
 
+.game-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 6px 6px,
+    linear-gradient(120deg, rgba(57, 245, 255, 0.05), transparent 60%);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.game-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
 .hero {
   display: flex;
   flex-wrap: wrap;
@@ -151,6 +167,13 @@ button {
 
 .cta:hover {
   transform: translateY(-1px) scale(1.01);
+}
+
+.cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .dashboard {
@@ -225,6 +248,7 @@ button {
   filter: blur(var(--roulette-blur));
   opacity: var(--roulette-opacity);
   transition: filter 0.4s ease, opacity 0.4s ease;
+  overflow: hidden;
 }
 
 .roulette-wheel {
@@ -232,6 +256,7 @@ button {
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   width: min(320px, 85%);
+  transform-origin: center;
 }
 
 .roulette-slot {
@@ -250,12 +275,36 @@ button {
   background: rgba(255, 204, 72, 0.16);
 }
 
+.roulette-slot.result {
+  border-color: rgba(57, 245, 255, 0.6);
+  box-shadow: 0 0 20px rgba(57, 245, 255, 0.6);
+  background: rgba(57, 245, 255, 0.18);
+}
+
 .roulette-pointer {
   position: absolute;
   top: 12px;
   font-size: 1.2rem;
   color: var(--accent-3);
   text-shadow: 0 0 8px rgba(255, 204, 72, 0.8);
+}
+
+.roulette.spinning::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+  mix-blend-mode: screen;
+  animation: pulseGlow calc(0.8s * var(--motion-scale)) infinite;
+  pointer-events: none;
+}
+
+.roulette.spinning .roulette-wheel {
+  animation: spinWheel calc(0.9s * var(--motion-scale)) ease-in-out;
+}
+
+.roulette.spinning .roulette-slot {
+  animation: flicker calc(0.35s * var(--motion-scale)) infinite;
 }
 
 .roulette-hint {
@@ -536,6 +585,41 @@ body.corruption-5 {
   100% {
     transform: translate(0, 0);
     opacity: 1;
+  }
+}
+
+@keyframes spinWheel {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: blur(0px);
+  }
+  50% {
+    transform: rotate(360deg) scale(1.05);
+    filter: blur(1px);
+  }
+  100% {
+    transform: rotate(720deg) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
   }
 }
 
