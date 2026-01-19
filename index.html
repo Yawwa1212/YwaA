@@ -7,7 +7,7 @@
     <style>
         body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: Arial; }
         canvas { display: block; margin: 0 auto; }
-        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 48px; opacity: 0.7; animation: pulse 2s infinite; }
         #score { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
         #spacebar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; opacity: 0.7; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
@@ -15,10 +15,7 @@
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    <div id="startScreen">
-        <h1>Flappy Whisper</h1>
-        <button onclick="startGame()">SPACE</button>
-    </div>
+    <div id="startScreen">SPACE</div>
     <div id="score">0</div>
     <div id="spacebar">SPACEBAR</div>
 
@@ -40,23 +37,37 @@
         let gameRunning = false;
         let particles = [];
 
-        // Web Audio API for sound effect
+        // ASMR-style soft whoosh sound
         let audioContext;
         function initAudio() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        function playJumpSound() {
+        function playASMRJumpSound() {
             if (!audioContext) initAudio();
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
+            const noise = audioContext.createBufferSource();
+            const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.3, audioContext.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = noiseBuffer;
+
             oscillator.connect(gainNode);
+            noise.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            oscillator.frequency.value = 800;
+
+            oscillator.frequency.value = 350; // Low, soft frequency for ASMR
             oscillator.type = 'sine';
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3); // Gentle fade out
+
             oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
+            noise.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+            noise.stop(audioContext.currentTime + 0.3);
         }
 
         function createParticle(x, y) {
@@ -77,7 +88,7 @@
                 p.x += p.vx;
                 p.y += p.vy;
                 p.life--;
-                p.vy += 0.2; // gravity for particles
+                p.vy += 0.2;
                 return p.life > 0;
             });
         }
@@ -124,58 +135,4 @@
                     score++;
                     document.getElementById('score').textContent = score;
                 }
-                if (50 + 20 > pipe.x && 50 < pipe.x + pipeWidth && (birdY < pipe.top || birdY + 20 > pipe.bottom)) endGame();
-            });
-
-            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
-                let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
-                pipes.push({ x: canvas.width, top, bottom: top + pipeGap });
-            }
-
-            updateParticles();
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPipes();
-            drawBird();
-            drawParticles();
-            requestAnimationFrame(update);
-        }
-
-        function spaceJump() {
-            if (gameRunning) {
-                birdVelocity = jump;
-                playJumpSound();
-                createParticle(50, birdY);
-            }
-        }
-
-        function startGame() {
-            gameRunning = true;
-            document.getElementById('startScreen').style.display = 'none';
-            pipes = [];
-            birdY = 300;
-            birdVelocity = 0;
-            score = 0;
-            particles = [];
-            document.getElementById('score').textContent = '0';
-            update();
-        }
-
-        function endGame() {
-            gameRunning = false;
-            document.getElementById('startScreen').innerHTML = `<h1>Game Over</h1><p>${score}</p><button onclick="startGame()">SPACE</button>`;
-            document.getElementById('startScreen').style.display = 'block';
-        }
-
-        // Spacebar event
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                spaceJump();
-            }
-        });
-
-        initAudio();
-    </script>
-</body>
-</html>
+                if
