@@ -1,3 +1,65 @@
+// ===== SFX (WebAudio, 외부 파일 없이도 타격감 가능) =====
+let AC;
+function audioCtx(){
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === "suspended") AC.resume();
+  return AC;
+}
+
+function blip({freq=220, dur=0.05, type="square", gain=0.12} = {}){
+  const ac = audioCtx();
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, ac.currentTime);
+  g.gain.setValueAtTime(0.0001, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  o.connect(g).connect(ac.destination);
+  o.start();
+  o.stop(ac.currentTime + dur + 0.02);
+}
+
+function thump({dur=0.08, gain=0.18} = {}){
+  const ac = audioCtx();
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(90, ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(45, ac.currentTime + dur);
+  g.gain.setValueAtTime(0.0001, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  o.connect(g).connect(ac.destination);
+  o.start();
+  o.stop(ac.currentTime + dur + 0.02);
+}
+
+function hiss({dur=0.12, gain=0.06} = {}){
+  const ac = audioCtx();
+  const bufferSize = Math.max(1, (ac.sampleRate * dur) | 0);
+  const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
+  const src = ac.createBufferSource();
+  const g = ac.createGain();
+  src.buffer = buffer;
+  g.gain.value = gain;
+  src.connect(g).connect(ac.destination);
+  src.start();
+}
+
+// ===== Screen punch (짧은 흔들림) =====
+function screenPunch(intensity=6, ms=120){
+  const el = document.documentElement;
+  el.classList.add("punch");
+  el.style.setProperty("--punch", `${intensity}px`);
+  setTimeout(()=> {
+    el.classList.remove("punch");
+    el.style.removeProperty("--punch");
+  }, ms);
+}
+
 function clamp01(x){return Math.max(0, Math.min(1, x));}
 
 export class AudioEngine {
