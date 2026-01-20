@@ -22,6 +22,7 @@ assets/audio/에 mp3/wav 넣고 audio_manifest.json 수정 – 폴백 합성 사
 - base.css, effects.css: 스타일.
 - app.js: 로직.
 - roulette.js, audio.js, anatomy.js, storage.js: 모듈.
+- sw.js: 서비스 워커(PWA 오프라인 캐시).
 - audio_manifest.json: 오디오 목록.
 - manifest.json: PWA.
 - assets/img/anatomy.svg: 해부도.
