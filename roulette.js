@@ -11,15 +11,14 @@ function easeOutCubic(t) {
 }
 
 export const DEFAULT_SEGMENTS = [
-  // The wheel is intentionally simple and readable.
-  // Multipliers are PROFIT multipliers:
+  // Profit multipliers:
   // totalReturn = bet + bet*mult
-  { key: "BUST",    label: "BUST",    kind: "mult", mult: -1,  weight: 26, tint: "#0b0712" },
-  { key: "PUSH",    label: "PUSH",    kind: "mult", mult:  0,  weight: 18, tint: "#061428" },
-  { key: "ONE",     label: "1X",      kind: "mult", mult:  1,  weight: 24, tint: "#002a3a" },
-  { key: "TWO",     label: "2X",      kind: "mult", mult:  2,  weight: 12, tint: "#2a003a" },
-  { key: "THREE",   label: "3X",      kind: "mult", mult:  3,  weight:  6, tint: "#1b3a00" },
-  { key: "JACKPOT", label: "JACKPOT", kind: "mult", mult: 12,  weight:  2, tint: "#3a0014" }
+  { key: "BUST",    label: "BUST",    kind: "mult", mult: -1, weight: 26 },
+  { key: "PUSH",    label: "PUSH",    kind: "mult", mult:  0, weight: 18 },
+  { key: "ONE",     label: "1X",      kind: "mult", mult:  1, weight: 24 },
+  { key: "TWO",     label: "2X",      kind: "mult", mult:  2, weight: 12 },
+  { key: "THREE",   label: "3X",      kind: "mult", mult:  3, weight:  6 },
+  { key: "JACKPOT", label: "JACKPOT", kind: "mult", mult: 12, weight:  2 }
 ];
 
 function pickWeighted(segments) {
@@ -45,7 +44,6 @@ export class Roulette {
     this.spinning = false;
     this._lastIndex = 0;
     this._lastTickAt = 0;
-    this._pattern = this._makePattern();
     this.draw();
   }
 
@@ -53,20 +51,6 @@ export class Roulette {
     this.segments = (segments || []).slice();
     this._lastIndex = this.getIndexAtPointer();
     this.draw();
-  }
-
-  _makePattern() {
-    const p = document.createElement("canvas");
-    p.width = 4;
-    p.height = 4;
-    const c = p.getContext("2d");
-    c.clearRect(0, 0, 4, 4);
-    c.fillStyle = "rgba(255,255,255,0.65)";
-    c.fillRect(0, 0, 1, 1);
-    c.fillRect(2, 2, 1, 1);
-    c.fillStyle = "rgba(0,0,0,0.55)";
-    c.fillRect(3, 1, 1, 1);
-    return this.ctx.createPattern(p, "repeat");
   }
 
   getIndexAtPointer(rot = this.rot) {
@@ -85,15 +69,12 @@ export class Roulette {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Outer glow
+    // Outer ring
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.shadowColor = "rgba(58,246,255,0.25)";
-    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.arc(0, 0, r + 6, 0, TAU);
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.lineWidth = 10;
+    ctx.arc(cx, cy, r + 6, 0, TAU);
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = 2;
     ctx.stroke();
     ctx.restore();
 
@@ -108,54 +89,25 @@ export class Roulette {
       const s = this.segments[i];
       const a0 = start + i * seg;
       const a1 = a0 + seg;
+      const isJackpot = s.key === "JACKPOT";
+      const isBust = s.key === "BUST";
 
-      // Wedge fill (neon glass feel)
+      // Wedge
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.arc(0, 0, r, a0, a1);
       ctx.closePath();
 
-      const g = ctx.createRadialGradient(0, 0, r * 0.06, 0, 0, r);
-      g.addColorStop(0, "rgba(0,0,0,0.55)");
-      g.addColorStop(0.42, s.tint);
-      g.addColorStop(1, "rgba(255,255,255,0.10)");
-      ctx.fillStyle = g;
+      let fill = (i % 2 === 0) ? "#0a0a0a" : "#111";
+      if (isBust) fill = "#050505";
+      if (isJackpot) fill = "#fff";
+
+      ctx.fillStyle = fill;
       ctx.fill();
 
-      // Jackpot hazard stripes
-      if (s.key === "JACKPOT") {
-        ctx.save();
-        ctx.globalAlpha = 0.22;
-        ctx.globalCompositeOperation = "screen";
-        ctx.fillStyle = "rgba(255,212,0,0.7)";
-        for (let k = 0; k < 16; k++) {
-          const rr0 = r * (0.25 + k * 0.04);
-          const rr1 = rr0 + r * 0.018;
-          ctx.beginPath();
-          ctx.arc(0, 0, rr1, a0, a1);
-          ctx.arc(0, 0, rr0, a1, a0, true);
-          ctx.closePath();
-          if (k % 2 === 0) ctx.fill();
-        }
-        ctx.restore();
-      }
-
-      // Dither overlay
-      ctx.save();
-      ctx.globalAlpha = 0.09;
-      ctx.globalCompositeOperation = "overlay";
-      ctx.fillStyle = this._pattern;
-      ctx.fill();
-      ctx.restore();
-
-      // Edge line (bright neon)
-      ctx.save();
-      ctx.shadowColor = s.key === "JACKPOT" ? "rgba(255,212,0,0.55)" : "rgba(58,246,255,0.35)";
-      ctx.shadowBlur = s.key === "JACKPOT" ? 12 : 7;
-      ctx.strokeStyle = s.key === "BUST" ? "rgba(255,53,107,0.35)" : "rgba(255,255,255,0.18)";
-      ctx.lineWidth = 2.25;
+      ctx.strokeStyle = "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.restore();
 
       // Label
       const mid = (a0 + a1) / 2;
@@ -163,55 +115,39 @@ export class Roulette {
       ctx.rotate(mid);
       ctx.translate(0, -r * 0.72);
       ctx.rotate(-mid);
-      ctx.font = s.key === "JACKPOT" ? "900 15px ui-monospace, Menlo, Consolas, 'Courier New', monospace" : "900 14px ui-monospace, Menlo, Consolas, 'Courier New', monospace";
+      ctx.font = isJackpot
+        ? "900 15px ui-monospace, Menlo, Consolas, Courier New, monospace"
+        : "900 14px ui-monospace, Menlo, Consolas, Courier New, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      // Stroke + glow to survive scanlines
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = "rgba(0,0,0,0.55)";
-      ctx.strokeText(s.label, 0, 0);
-
-      ctx.fillStyle = s.key === "JACKPOT" ? "rgba(255,212,0,0.95)" : "rgba(255,255,255,0.92)";
-      ctx.shadowColor = s.key === "BUST" ? "rgba(255,53,107,0.35)" : s.key === "JACKPOT" ? "rgba(255,212,0,0.55)" : "rgba(255,75,216,0.28)";
-      ctx.shadowBlur = s.key === "JACKPOT" ? 12 : 8;
+      ctx.fillStyle = isJackpot ? "#000" : "rgba(255,255,255,0.92)";
       ctx.fillText(s.label, 0, 0);
       ctx.restore();
     }
 
-    // Inner ring
+    // Hub
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.58, 0, TAU);
-    ctx.fillStyle = "rgba(0,0,0,0.42)";
+    ctx.arc(0, 0, r * 0.22, 0, TAU);
+    ctx.fillStyle = "#000";
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.strokeStyle = "rgba(255,255,255,0.42)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Hub
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.23, 0, TAU);
-    ctx.fillStyle = "rgba(10,12,20,0.88)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(58,246,255,0.22)";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.font = "900 16px ui-monospace, Menlo, Consolas, 'Courier New', monospace";
+    ctx.font = "900 15px ui-monospace, Menlo, Consolas, Courier New, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.shadowColor = "rgba(58,246,255,0.28)";
-    ctx.shadowBlur = 8;
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
     ctx.fillText("GWL", 0, 1);
 
     ctx.restore();
 
-    // Vignette
+    // Soft vignette (very subtle)
     ctx.save();
-    ctx.globalAlpha = 0.25;
-    const grd = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.2);
+    ctx.globalAlpha = 0.10;
+    const grd = ctx.createRadialGradient(cx, cy, r * 0.25, cx, cy, r * 1.15);
     grd.addColorStop(0, "rgba(0,0,0,0)");
-    grd.addColorStop(1, "rgba(0,0,0,0.85)");
+    grd.addColorStop(1, "rgba(0,0,0,1)");
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, w, h);
     ctx.restore();
@@ -242,8 +178,8 @@ export class Roulette {
         const t = Math.min(1, (now - t0) / duration);
         const e = easeOutCubic(t);
 
-        // A tiny analog wobble (kept subtle so it won't make users nauseous)
-        const wobble = this.spinning ? Math.sin(now / 90) * 0.002 : 0;
+        // tiny wobble (kept minimal)
+        const wobble = this.spinning ? Math.sin(now / 110) * 0.0012 : 0;
 
         this.rot = startRot + (endRot - startRot) * e + wobble;
         this.draw();
@@ -251,7 +187,7 @@ export class Roulette {
         const idx = this.getIndexAtPointer(this.rot);
         if (idx !== this._lastIndex) {
           this._lastIndex = idx;
-          const canTick = now - (this._lastTickAt || 0) > 34;
+          const canTick = now - (this._lastTickAt || 0) > 38;
           if (canTick) {
             this._lastTickAt = now;
             if (this.audio && typeof this.audio.play === "function") {

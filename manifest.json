@@ -4,8 +4,8 @@
   "description": "디스토피아 사이버펑크 룰렛 게임",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#07070c",
-  "theme_color": "#3af6ff",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "assets/img/icon-192.png",
