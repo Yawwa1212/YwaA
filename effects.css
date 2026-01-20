@@ -1,0 +1,72 @@
+/* FX LAYER: noise, scanlines, vignette, vhs wobble */
+
+.fx{position:fixed; inset:0; pointer-events:none; z-index:5; mix-blend-mode:overlay; opacity:0.0}
+
+/* noise */
+.fx-noise{
+  opacity:calc(var(--noise));
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, rgba(0,0,0,0) 1px 2px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0) 1px 3px);
+  filter: contrast(140%) brightness(110%);
+  animation: noise-shift 240ms steps(2) infinite;
+}
+
+/* scanlines */
+.fx-scanlines{
+  opacity:0.25;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0,0,0,0.00) 0px,
+    rgba(0,0,0,0.00) 2px,
+    rgba(0,0,0,0.10) 3px,
+    rgba(0,0,0,0.00) 5px
+  );
+}
+
+/* vignette */
+.fx-vignette{
+  opacity:0.5;
+  mix-blend-mode:multiply;
+  background: radial-gradient(circle at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 52%, rgba(0,0,0,0.8) 100%);
+}
+
+/* vhs wobble */
+.fx-vhs{
+  opacity:0.18;
+  background:
+    linear-gradient(90deg, rgba(58,246,255,0.08), transparent 22%, rgba(255,75,216,0.08) 66%, transparent 100%);
+  filter: blur(0.6px);
+  animation: vhs-jitter 1.6s steps(2) infinite;
+}
+
+/* corruption scaling hook */
+body[class*="corruption-"] .fx{opacity:1}
+body.corruption-0{--noise:0.06; --blur:0px; --dark:1.00}
+body.corruption-1{--noise:0.10; --blur:0.2px; --dark:0.98}
+body.corruption-2{--noise:0.14; --blur:0.35px; --dark:0.96}
+body.corruption-3{--noise:0.18; --blur:0.55px; --dark:0.93}
+body.corruption-4{--noise:0.22; --blur:0.75px; --dark:0.90}
+body.corruption-5{--noise:0.28; --blur:1.1px; --dark:0.86}
+
+/* lever animation referenced in base.css */
+@keyframes lever-neutral{
+  0%{transform:rotate(0deg)}
+  35%{transform:rotate(10deg)}
+  100%{transform:rotate(0deg)}
+}
+
+@keyframes noise-shift{
+  0%{transform:translate3d(0,0,0)}
+  50%{transform:translate3d(-1px,1px,0)}
+  100%{transform:translate3d(1px,-1px,0)}
+}
+
+@keyframes vhs-jitter{
+  0%{transform:translate3d(0,0,0)}
+  20%{transform:translate3d(0,1px,0)}
+  40%{transform:translate3d(-1px,0,0)}
+  60%{transform:translate3d(1px,0,0)}
+  80%{transform:translate3d(0,-1px,0)}
+  100%{transform:translate3d(0,0,0)}
+}

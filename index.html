@@ -1,135 +1,173 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>GANG WON LAND</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="effects.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#07070c" />
 </head>
-<body class="corruption-0 state-normal">
-  <div class="scanlines" aria-hidden="true"></div>
-  <main class="game-shell">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">Neon Ruin Roulette</p>
-        <h1>GANG WON LAND</h1>
-        <p class="subtitle">사이버펑크 축제에서 시작해 파멸의 룰렛으로 내려가는 1-클릭 도박극.</p>
-      </div>
-      <div class="hero-actions">
-        <button class="ghost" id="toggle-audio" type="button">Audio: On</button>
-        <button class="ghost" id="toggle-motion" type="button">Reduce Motion: Off</button>
-        <button class="ghost" id="toggle-effects" type="button">FX Intensity: High</button>
-      </div>
-    </header>
+<body class="mood-neutral corruption-0" data-corruption="0">
+  <div class="fx fx-noise" aria-hidden="true"></div>
+  <div class="fx fx-scanlines" aria-hidden="true"></div>
+  <div class="fx fx-vignette" aria-hidden="true"></div>
+  <div class="fx fx-vhs" aria-hidden="true"></div>
 
-    <section class="dashboard">
-      <div class="stat">
-        <span>Cash</span>
-        <strong id="cash">₩5,000,000</strong>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-title">GANG WON LAND</div>
+      <div class="brand-sub">cyberpunk dot • analog horror • roulette debt simulator</div>
+    </div>
+    <div class="topbar-right">
+      <div class="meter" title="현재 자산(현금-빚)">
+        <div class="meter-label">NET</div>
+        <div class="meter-value" id="netWorth">₩0</div>
       </div>
-      <div class="stat">
-        <span>Debt</span>
-        <strong id="debt">₩0</strong>
-      </div>
-      <div class="stat">
-        <span>Max Debt</span>
-        <strong>₩30,000,000</strong>
-      </div>
-      <div class="stat">
-        <span>Organs / Modules</span>
-        <strong id="organs">5</strong>
-      </div>
-      <div class="stat">
-        <span>Corruption</span>
-        <strong id="corruption">0</strong>
-      </div>
-      <div class="stat">
-        <span>Win Streak</span>
-        <strong id="streak">0</strong>
-      </div>
-    </section>
+      <button class="ghost" id="toggleSound" type="button">SOUND: ON</button>
+      <button class="ghost" id="toggleMotion" type="button">MOTION: ON</button>
+    </div>
+  </header>
 
-    <section class="arena">
-      <div class="roulette-panel">
-        <div class="roulette-veil" aria-hidden="true"></div>
-        <div class="roulette" id="roulette">
-          <div class="roulette-wheel" id="roulette-wheel"></div>
-          <div class="roulette-pointer">▲</div>
+  <main class="shell" id="shell">
+    <section class="panel wheel-panel">
+      <div class="wheel-header">
+        <div class="wheel-title">ROULETTE CORE</div>
+        <div class="wheel-status" id="statusLine">레버를 당겨라.</div>
+      </div>
+
+      <div class="wheel-stage">
+        <div class="pointer" aria-hidden="true"></div>
+        <div class="wheel-glass" aria-hidden="true"></div>
+        <canvas id="roulette" width="460" height="460" aria-label="룰렛"></canvas>
+        <div class="spin-hud" id="spinHud" aria-hidden="true">
+          <div class="hud-text" id="hudText">SPIN</div>
         </div>
-        <p class="roulette-hint">멀티플라이어는 하우스 엣지가 있는 확률로 결정됩니다.</p>
       </div>
 
-      <div class="control-panel">
-        <div class="betting">
-          <label for="bet-input">Bet Amount</label>
-          <div class="bet-controls">
-            <button type="button" class="pill" data-bet-adjust="-100000">-100k</button>
-            <button type="button" class="pill" data-bet-adjust="-500000">-500k</button>
-            <input type="number" id="bet-input" min="100000" step="100000" />
-            <button type="button" class="pill" data-bet-adjust="500000">+500k</button>
-            <button type="button" class="pill" data-bet-adjust="100000">+100k</button>
-          </div>
-          <input type="range" id="bet-slider" min="100000" max="5000000" step="100000" />
-          <button id="spin" class="cta" type="button">SPIN</button>
-        </div>
-
-        <div class="loan">
-          <h2>Loan Station</h2>
-          <p>현금이 부족하면 즉시 대출. 상한은 ₩30,000,000.</p>
-          <div class="loan-controls">
-            <input type="number" id="loan-input" min="100000" step="100000" value="1000000" />
-            <button type="button" class="pill" id="take-loan">Take Loan</button>
-            <button type="button" class="pill" id="repay-loan">Repay Loan</button>
-          </div>
+      <div class="lever-zone">
+        <div class="lever-wrap">
+          <button id="lever" type="button" aria-label="레버 당기기">
+            <span class="lever-base" aria-hidden="true"></span>
+            <span class="lever-shaft" aria-hidden="true"></span>
+            <span class="lever-knob" aria-hidden="true"></span>
+          </button>
+          <div class="pull-label" id="pullLabel" aria-hidden="true">PULL!</div>
         </div>
 
         <div class="controls">
-          <button type="button" class="ghost" id="reset">Reset</button>
-          <button type="button" class="ghost" id="hard-reset">Hard Reset (clear local)</button>
+          <div class="row">
+            <label class="field">
+              <span>BET</span>
+              <input id="bet" type="number" inputmode="numeric" min="0" step="1000" value="10000" />
+            </label>
+            <button class="primary" id="spinBtn" type="button">SPIN</button>
+          </div>
+
+          <div class="row">
+            <button class="secondary" id="borrowBtn" type="button">대출</button>
+            <button class="secondary" id="repayBtn" type="button">상환</button>
+          </div>
+
+          <div class="row slim">
+            <label class="field inline">
+              <span>VOL</span>
+              <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            </label>
+            <div class="pill" id="moodPill">MOOD</div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="log-panel">
-      <div>
-        <h2>Status Feed</h2>
-        <p id="status" class="status">환영합니다. 한 번의 스핀으로 모든 것이 바뀝니다.</p>
-      </div>
-      <div class="history">
-        <h3>Spin History</h3>
-        <ol id="history"></ol>
-      </div>
-    </section>
-
-    <section class="leaderboard">
-      <div class="leaderboard-header">
-        <h2>Online: Local Leaderboard</h2>
-        <div class="name-entry">
-          <label for="player-name">Nickname</label>
-          <input type="text" id="player-name" maxlength="12" placeholder="NeonGhost" />
-          <button type="button" class="pill" id="save-name">Save</button>
+    <section class="panel stats-panel">
+      <div class="stats">
+        <div class="stat">
+          <div class="k">현금</div>
+          <div class="v" id="cash">₩1,000,000</div>
+        </div>
+        <div class="stat">
+          <div class="k">빚</div>
+          <div class="v" id="debt">₩0</div>
+        </div>
+        <div class="stat">
+          <div class="k">이자</div>
+          <div class="v" id="interest">0%</div>
+        </div>
+        <div class="stat">
+          <div class="k">연승</div>
+          <div class="v" id="streak">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">부패</div>
+          <div class="v" id="corruption">0</div>
         </div>
       </div>
-      <div class="leaderboard-table" id="leaderboard"></div>
+
+      <div class="organs-card">
+        <div class="card-title">장기 재고</div>
+        <div class="organs" id="organChips" aria-label="남은 장기"></div>
+      </div>
+
+      <div class="log-card">
+        <div class="card-title">로그</div>
+        <div class="log" id="log"></div>
+      </div>
     </section>
   </main>
 
-  <section class="event-modal" id="event-modal" aria-hidden="true" role="dialog">
-    <div class="event-card">
-      <h2 id="event-title">사채업자 접속</h2>
-      <p id="event-body"></p>
-      <div class="event-actions" id="event-actions"></div>
-    </div>
-  </section>
+  <aside class="anatomy" aria-label="인체 해부도">
+    <div class="anatomy-title">HUMAN BLUEPRINT</div>
+    <object id="anatomySvg" type="image/svg+xml" data="assets/img/anatomy.svg" aria-label="인체 해부도"></object>
+  </aside>
 
-  <section class="ending" id="ending" aria-hidden="true">
-    <div class="ending-card">
-      <h2>GANG WON LAND // END</h2>
-      <p id="ending-text"></p>
-      <button type="button" class="cta" id="restart">Restart</button>
-    </div>
-  </section>
+  <div class="modal" id="loanModal" role="dialog" aria-modal="true" aria-labelledby="loanTitle" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title" id="loanTitle">대출</div>
+        <button class="ghost" id="loanClose" type="button">닫기</button>
+      </div>
 
-  <script src="game.js"></script>
+      <div class="modal-body">
+        <p class="muted">최대 3천만원까지. 대출할 때만 사채업자가 나타난다.</p>
+        <label class="field">
+          <span>대출 금액</span>
+          <input id="loanAmount" type="number" inputmode="numeric" min="0" step="100000" value="1000000" />
+        </label>
+
+        <div class="row">
+          <button class="primary" id="loanConfirm" type="button">확인</button>
+        </div>
+
+        <div class="loanShark" id="loanShark" hidden>
+          <div class="shark-title">사채업자 이벤트</div>
+          <p class="muted" id="sharkText">"규칙을 바꿔. 지금."</p>
+          <div class="row">
+            <button class="secondary" id="sharkDeal" type="button">딜</button>
+            <button class="secondary" id="sharkSqueeze" type="button">갈아넣기</button>
+            <button class="danger" id="sharkRefuse" type="button">거절</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="organModal" role="dialog" aria-modal="true" aria-labelledby="organTitle" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title" id="organTitle">압류</div>
+        <button class="ghost" id="organClose" type="button">닫기</button>
+      </div>
+      <div class="modal-body">
+        <p id="organText" class="muted">남은 장기 중 하나를 선택해.</p>
+        <div class="organ-grid" id="organGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>

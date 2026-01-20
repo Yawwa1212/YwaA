@@ -1,0 +1,27 @@
+# GANG WON LAND (v3 - Grok Rebuild)
+
+디스토피아 사이버펑크 아날로그 호러 도트 컨셉 룰렛 웹게임. 정적 파일 – GitHub Pages에 업로드 시 바로 동작.
+
+## 기능
+- 룰렛 스핀, 베팅, 대출/상환.
+- 부패 시스템: 장기 압류 시 화면 왜곡/노이즈 증가.
+- 모드: 쾌감 (네온), 산업 (어두움).
+- 사운드: 합성 + 사용자 오디오.
+- PWA 지원 (앱 설치).
+- 모바일 최적화.
+
+## 배포
+1. repo 만들기, 파일 업로드.
+2. Settings > Pages > Source: main – 도메인 생성.
+
+## 오디오
+assets/audio/에 mp3/wav 넣고 audio_manifest.json 수정 – 폴백 합성 사운드.
+
+## 구조
+- index.html: 메인.
+- base.css, effects.css: 스타일.
+- app.js: 로직.
+- roulette.js, audio.js, anatomy.js, storage.js: 모듈.
+- audio_manifest.json: 오디오 목록.
+- manifest.json: PWA.
+- assets/img/anatomy.svg: 해부도.
