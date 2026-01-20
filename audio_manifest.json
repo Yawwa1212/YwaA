@@ -2,9 +2,12 @@
   "basePath": "assets/audio/",
   "groups": {
     "tick": [],
+    "land": [],
     "lever": [],
+    "thump": [],
     "win": [],
     "lose": [],
+    "jackpot": [],
     "organ": [],
     "shark": [],
     "party": []

@@ -1,65 +1,3 @@
-// ===== SFX (WebAudio, 외부 파일 없이도 타격감 가능) =====
-let AC;
-function audioCtx(){
-  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-  if (AC.state === "suspended") AC.resume();
-  return AC;
-}
-
-function blip({freq=220, dur=0.05, type="square", gain=0.12} = {}){
-  const ac = audioCtx();
-  const o = ac.createOscillator();
-  const g = ac.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(freq, ac.currentTime);
-  g.gain.setValueAtTime(0.0001, ac.currentTime);
-  g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + 0.005);
-  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
-  o.connect(g).connect(ac.destination);
-  o.start();
-  o.stop(ac.currentTime + dur + 0.02);
-}
-
-function thump({dur=0.08, gain=0.18} = {}){
-  const ac = audioCtx();
-  const o = ac.createOscillator();
-  const g = ac.createGain();
-  o.type = "sine";
-  o.frequency.setValueAtTime(90, ac.currentTime);
-  o.frequency.exponentialRampToValueAtTime(45, ac.currentTime + dur);
-  g.gain.setValueAtTime(0.0001, ac.currentTime);
-  g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + 0.005);
-  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
-  o.connect(g).connect(ac.destination);
-  o.start();
-  o.stop(ac.currentTime + dur + 0.02);
-}
-
-function hiss({dur=0.12, gain=0.06} = {}){
-  const ac = audioCtx();
-  const bufferSize = Math.max(1, (ac.sampleRate * dur) | 0);
-  const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
-  const src = ac.createBufferSource();
-  const g = ac.createGain();
-  src.buffer = buffer;
-  g.gain.value = gain;
-  src.connect(g).connect(ac.destination);
-  src.start();
-}
-
-// ===== Screen punch (짧은 흔들림) =====
-function screenPunch(intensity=6, ms=120){
-  const el = document.documentElement;
-  el.classList.add("punch");
-  el.style.setProperty("--punch", `${intensity}px`);
-  setTimeout(()=> {
-    el.classList.remove("punch");
-    el.style.removeProperty("--punch");
-  }, ms);
-}
-
 function clamp01(x){return Math.max(0, Math.min(1, x));}
 
 export class AudioEngine {
@@ -72,6 +10,8 @@ export class AudioEngine {
     this.groups = {};
     this.basePath = "";
     this._lastTickAt = 0;
+    this._noiseBuf = null;
+    this._comp = null;
   }
 
   async init() {
@@ -80,7 +20,20 @@ export class AudioEngine {
     this.ctx = new AudioCtx();
     this.master = this.ctx.createGain();
     this.master.gain.value = this.volume;
-    this.master.connect(this.ctx.destination);
+
+    // A light compressor makes tiny synth sfx feel heavier.
+    this._comp = this.ctx.createDynamicsCompressor();
+    this._comp.threshold.value = -18;
+    this._comp.knee.value = 24;
+    this._comp.ratio.value = 4;
+    this._comp.attack.value = 0.003;
+    this._comp.release.value = 0.16;
+
+    this.master.connect(this._comp);
+    this._comp.connect(this.ctx.destination);
+
+    // Prebuild a short noise buffer for clicks/impacts.
+    this._noiseBuf = this._noiseBuf || this._makeNoise(0.25);
 
     try {
       const res = await fetch("audio_manifest.json", { cache: "no-store" });
@@ -93,6 +46,34 @@ export class AudioEngine {
     } catch {
       // ignore
     }
+  }
+
+  _makeNoise(seconds) {
+    const sr = this.ctx.sampleRate;
+    const len = Math.max(1, Math.floor(sr * seconds));
+    const buf = this.ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      // Slightly "colored" noise for less harshness
+      const t = i / len;
+      d[i] = (Math.random() * 2 - 1) * (1 - t * 0.15);
+    }
+    return buf;
+  }
+
+  _noiseShot(t, dur, gain, hp = 400) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this._noiseBuf || this._makeNoise(0.25);
+    const g = this.ctx.createGain();
+    const f = this.ctx.createBiquadFilter();
+    f.type = "highpass";
+    f.frequency.setValueAtTime(hp, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.01, dur));
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t);
+    src.stop(t + dur + 0.02);
   }
 
   setEnabled(on) {
@@ -161,58 +142,80 @@ export class AudioEngine {
 
     // Fallback synthesized
     if (name === "tick") {
+      // Click + short ping
+      this._noiseShot(t, 0.05, 0.16, 1200);
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       o.type = "square";
-      o.frequency.setValueAtTime(880, t);
-      o.frequency.exponentialRampToValueAtTime(660, t + 0.03);
+      o.frequency.setValueAtTime(980, t);
+      o.frequency.exponentialRampToValueAtTime(640, t + 0.025);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.12, t + 0.005);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.10, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
       o.connect(g); g.connect(out);
       o.start(t); o.stop(t + 0.06);
       return;
     }
 
     if (name === "lever") {
+      // Mechanical thump
+      this._noiseShot(t, 0.11, 0.22, 700);
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       o.type = "triangle";
-      o.frequency.setValueAtTime(220, t);
-      o.frequency.exponentialRampToValueAtTime(110, t + 0.12);
+      o.frequency.setValueAtTime(200, t);
+      o.frequency.exponentialRampToValueAtTime(90, t + 0.16);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+      g.gain.exponentialRampToValueAtTime(0.22, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
       o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.16);
+      o.start(t); o.stop(t + 0.20);
+      return;
+    }
+
+    if (name === "land") {
+      // Heavy landing thud
+      this._noiseShot(t, 0.10, 0.25, 420);
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(78, t);
+      o.frequency.exponentialRampToValueAtTime(52, t + 0.13);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.32, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      o.connect(g); g.connect(out);
+      o.start(t); o.stop(t + 0.22);
       return;
     }
 
     if (name === "win") {
+      this._noiseShot(t, 0.08, 0.12, 900);
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       o.type = "sawtooth";
-      o.frequency.setValueAtTime(440, t);
-      o.frequency.exponentialRampToValueAtTime(880, t + 0.1);
+      o.frequency.setValueAtTime(520, t);
+      o.frequency.exponentialRampToValueAtTime(1040, t + 0.10);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.15, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      g.gain.exponentialRampToValueAtTime(0.20, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
       o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.14);
+      o.start(t); o.stop(t + 0.18);
       return;
     }
 
     if (name === "lose") {
+      this._noiseShot(t, 0.09, 0.18, 650);
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       o.type = "sawtooth";
-      o.frequency.setValueAtTime(440, t);
-      o.frequency.exponentialRampToValueAtTime(220, t + 0.1);
+      o.frequency.setValueAtTime(320, t);
+      o.frequency.exponentialRampToValueAtTime(110, t + 0.16);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.15, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      g.gain.exponentialRampToValueAtTime(0.24, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
       o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.14);
+      o.start(t); o.stop(t + 0.22);
       return;
     }
 
@@ -231,6 +234,7 @@ export class AudioEngine {
     }
 
     if (name === "shark") {
+      this._noiseShot(t, 0.22, 0.18, 520);
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       o.type = "triangle";
@@ -256,6 +260,41 @@ export class AudioEngine {
         g.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
         o.connect(g); g.connect(out);
         o.start(start); o.stop(start + 0.17);
+      }
+    }
+
+    if (name === "jackpot") {
+      // Bright neon jackpot sting: chord stabs + noisy splash
+      this._noiseShot(t, 0.35, 0.22, 380);
+
+      const freqs = [392, 523.25, 659.25, 1046.5]; // G4 C5 E5 C6
+      for (let i = 0; i < freqs.length; i++) {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = i % 2 === 0 ? "square" : "sawtooth";
+        const st = t + i * 0.02;
+        o.frequency.setValueAtTime(freqs[i], st);
+        o.frequency.exponentialRampToValueAtTime(freqs[i] * 1.18, st + 0.12);
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.18, st + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.22);
+        o.connect(g); g.connect(out);
+        o.start(st);
+        o.stop(st + 0.28);
+      }
+      // Trailing sparkle
+      for (let k = 0; k < 8; k++) {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        const st = t + 0.18 + k * 0.03;
+        o.type = "triangle";
+        o.frequency.setValueAtTime(900 + Math.random() * 1500, st);
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.12, st + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.12);
+        o.connect(g); g.connect(out);
+        o.start(st);
+        o.stop(st + 0.14);
       }
     }
   }

@@ -1,4 +1,4 @@
-/* FX LAYER: noise, scanlines, vignette, vhs wobble */
+/* FX LAYER: noise, scanlines, vignette, vhs wobble + neon theatrics */
 
 .fx{position:fixed; inset:0; pointer-events:none; z-index:5; mix-blend-mode:overlay; opacity:0.0}
 
@@ -14,7 +14,7 @@
 
 /* scanlines */
 .fx-scanlines{
-  opacity:0.25;
+  opacity:0.22;
   background: repeating-linear-gradient(
     180deg,
     rgba(0,0,0,0.00) 0px,
@@ -26,9 +26,9 @@
 
 /* vignette */
 .fx-vignette{
-  opacity:0.5;
+  opacity:0.38;
   mix-blend-mode:multiply;
-  background: radial-gradient(circle at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 52%, rgba(0,0,0,0.8) 100%);
+  background: radial-gradient(circle at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 52%, rgba(0,0,0,0.75) 100%);
 }
 
 /* vhs wobble */
@@ -40,14 +40,113 @@
   animation: vhs-jitter 1.6s steps(2) infinite;
 }
 
+/* neon grid floor (2077-ish) */
+.fx-grid{
+  z-index:4;
+  opacity:0.22;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(1000px 520px at 50% 112%, rgba(58,246,255,0.22), transparent 62%),
+    repeating-linear-gradient(90deg, rgba(58,246,255,0.14) 0 1px, rgba(0,0,0,0) 1px 84px),
+    repeating-linear-gradient(0deg, rgba(255,75,216,0.10) 0 1px, rgba(0,0,0,0) 1px 84px);
+  background-size: auto, 260px 260px, 260px 260px;
+  background-position: 0 0, 0 0, 0 0;
+  transform: perspective(760px) rotateX(58deg) translateY(175px) scale(1.22);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0.92) 55%, rgba(0,0,0,0.20) 78%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0.92) 55%, rgba(0,0,0,0.20) 78%, rgba(0,0,0,0) 100%);
+  animation: grid-drift 10.5s linear infinite;
+  filter: blur(0.25px);
+}
+
+/* neon rain streaks */
+.fx-rain{
+  opacity:0.16;
+  mix-blend-mode:screen;
+  background:
+    repeating-linear-gradient(125deg, rgba(58,246,255,0.10) 0 2px, rgba(0,0,0,0) 2px 26px),
+    repeating-linear-gradient(125deg, rgba(255,75,216,0.07) 0 1px, rgba(0,0,0,0) 1px 34px),
+    radial-gradient(900px 420px at 70% 30%, rgba(255,212,0,0.10), transparent 62%);
+  filter: blur(0.35px);
+  animation: rain-slide 1.35s linear infinite;
+}
+
+/* neon haze / bloom */
+.fx-haze{
+  z-index:4;
+  opacity:0.42;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(760px 420px at 25% 30%, rgba(255,75,216,0.18), transparent 65%),
+    radial-gradient(840px 520px at 70% 35%, rgba(58,246,255,0.20), transparent 68%),
+    radial-gradient(900px 520px at 55% 75%, rgba(255,212,0,0.12), transparent 70%);
+  filter: blur(10px);
+  animation: haze-pulse 6.6s ease-in-out infinite;
+}
+
+/* impact / jackpot overlays */
+.fx-flash{
+  opacity:0;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(58,246,255,0.46), transparent 55%),
+    radial-gradient(circle at 50% 50%, rgba(255,75,216,0.34), transparent 62%),
+    linear-gradient(90deg, rgba(255,212,0,0.14), transparent 45%, rgba(58,246,255,0.12));
+  filter: blur(0.4px);
+  z-index:7;
+}
+
+.fx-chroma{
+  opacity:0;
+  mix-blend-mode:overlay;
+  background:
+    linear-gradient(90deg, rgba(58,246,255,0.18), transparent 28%, rgba(255,75,216,0.18) 72%, transparent 100%);
+  filter: blur(0.8px);
+  z-index:7;
+}
+
+.fx-sparks{
+  opacity:0;
+  mix-blend-mode:screen;
+  background:
+    repeating-radial-gradient(circle at 20% 30%, rgba(255,212,0,0.24) 0 1px, transparent 1px 18px),
+    repeating-radial-gradient(circle at 70% 65%, rgba(58,246,255,0.20) 0 1px, transparent 1px 16px),
+    repeating-radial-gradient(circle at 60% 25%, rgba(255,75,216,0.18) 0 1px, transparent 1px 22px);
+  filter: blur(0.3px);
+  z-index:8;
+}
+
+body.fx-hit .fx-flash{animation: flash-hit 220ms ease-out 1;}
+body.fx-win .fx-chroma{animation: chroma-pulse 300ms ease-out 1;}
+body.fx-lose .fx-chroma{animation: chroma-pulse 280ms ease-out 1; filter: blur(0.9px) saturate(0.9);}
+body.fx-jackpot .fx-flash{animation: flash-jackpot 720ms ease-out 1;}
+body.fx-jackpot .fx-sparks{animation: sparks-jackpot 980ms ease-out 1;}
+body.fx-jackpot .fx-grid{animation: grid-blast 520ms steps(2) 1;}
+body.fx-jackpot .fx-rain{animation: rain-blast 520ms steps(2) 1;}
+
+/* Heavy "hitstop" feel: tiny shake + brightness bump */
+body.hitstop{
+  filter: brightness(calc(var(--dark) * 1.06)) saturate(calc(var(--saturation) * 1.08)) blur(var(--blur));
+}
+body.hitstop .shell,
+body.hitstop .topbar{
+  animation: hit-shake 150ms steps(2) 1;
+}
+
 /* corruption scaling hook */
 body[class*="corruption-"] .fx{opacity:1}
-body.corruption-0{--noise:0.06; --blur:0px; --dark:1.00}
-body.corruption-1{--noise:0.10; --blur:0.2px; --dark:0.98}
-body.corruption-2{--noise:0.14; --blur:0.35px; --dark:0.96}
-body.corruption-3{--noise:0.18; --blur:0.55px; --dark:0.93}
-body.corruption-4{--noise:0.22; --blur:0.75px; --dark:0.90}
-body.corruption-5{--noise:0.28; --blur:1.1px; --dark:0.86}
+body.corruption-0{--noise:0.06; --blur:0px; --dark:1.02}
+body.corruption-1{--noise:0.10; --blur:0.2px; --dark:1.00}
+body.corruption-2{--noise:0.14; --blur:0.35px; --dark:0.98}
+body.corruption-3{--noise:0.18; --blur:0.55px; --dark:0.95}
+body.corruption-4{--noise:0.22; --blur:0.75px; --dark:0.92}
+body.corruption-5{--noise:0.28; --blur:1.1px; --dark:0.88}
+
+/* mood knobs */
+body.mood-pleasure .fx-grid{opacity:0.28}
+body.mood-pleasure .fx-haze{opacity:0.48}
+body.mood-industrial .fx-grid{opacity:0.16}
+body.mood-industrial .fx-haze{opacity:0.26}
 
 /* lever animation referenced in base.css */
 @keyframes lever-neutral{
@@ -69,4 +168,66 @@ body.corruption-5{--noise:0.28; --blur:1.1px; --dark:0.86}
   60%{transform:translate3d(1px,0,0)}
   80%{transform:translate3d(0,-1px,0)}
   100%{transform:translate3d(0,0,0)}
+}
+
+@keyframes grid-drift{
+  0%{background-position: 0 0, 0 0, 0 0}
+  100%{background-position: 0 0, 0 240px, 240px 0}
+}
+
+@keyframes rain-slide{
+  0%{transform:translate3d(-40px,-20px,0)}
+  100%{transform:translate3d(40px,20px,0)}
+}
+
+@keyframes haze-pulse{
+  0%{opacity:0.34; transform:translate3d(0,0,0) scale(1.0)}
+  50%{opacity:0.52; transform:translate3d(0,-1px,0) scale(1.02)}
+  100%{opacity:0.34; transform:translate3d(0,0,0) scale(1.0)}
+}
+
+@keyframes flash-hit{
+  0%{opacity:0}
+  12%{opacity:0.98}
+  100%{opacity:0}
+}
+
+@keyframes flash-jackpot{
+  0%{opacity:0}
+  10%{opacity:1}
+  22%{opacity:0.55}
+  42%{opacity:1}
+  100%{opacity:0}
+}
+
+@keyframes chroma-pulse{
+  0%{opacity:0; transform:translate3d(0,0,0)}
+  30%{opacity:0.80; transform:translate3d(2px,0,0)}
+  100%{opacity:0; transform:translate3d(-2px,0,0)}
+}
+
+@keyframes sparks-jackpot{
+  0%{opacity:0; transform:translate3d(0,0,0) scale(0.98)}
+  20%{opacity:0.98}
+  100%{opacity:0; transform:translate3d(0,-2px,0) scale(1.02)}
+}
+
+@keyframes hit-shake{
+  0%{transform:translate3d(0,0,0)}
+  25%{transform:translate3d(-1px,0,0)}
+  50%{transform:translate3d(1px,0,0)}
+  75%{transform:translate3d(0,1px,0)}
+  100%{transform:translate3d(0,0,0)}
+}
+
+@keyframes grid-blast{
+  0%{opacity:0.12; filter: blur(0.25px)}
+  20%{opacity:0.55; filter: blur(0.1px)}
+  100%{opacity:0.22; filter: blur(0.25px)}
+}
+
+@keyframes rain-blast{
+  0%{opacity:0.10}
+  20%{opacity:0.45}
+  100%{opacity:0.16}
 }

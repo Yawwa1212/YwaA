@@ -11,19 +11,29 @@ function easeOutCubic(t) {
 }
 
 export const DEFAULT_SEGMENTS = [
-  { key: "VOID",     label: "VOID",  kind: "mult",  mult: 0.0, tint: "#0b0b12" },
-  { key: "HALF",     label: "0.5X",  kind: "mult",  mult: 0.5, tint: "#1b2435" },
-  { key: "ONE_A",    label: "1.0X",  kind: "mult",  mult: 1.0, tint: "#0b1d14" },
-  { key: "ONE_B",    label: "1.0X",  kind: "mult",  mult: 1.0, tint: "#101625" },
-  { key: "DOUBLE_A", label: "2.0X",  kind: "mult",  mult: 2.0, tint: "#061f2a" },
-  { key: "DOUBLE_B", label: "2.0X",  kind: "mult",  mult: 2.0, tint: "#2a061f" },
-  { key: "TRIPLE_A", label: "3.0X",  kind: "mult",  mult: 3.0, tint: "#2a1b06" },
-  { key: "TRIPLE_B", label: "3.0X",  kind: "mult",  mult: 3.0, tint: "#061b2a" },
-  { key: "JACKPOT",  label: "5.0X",  kind: "mult",  mult: 5.0, tint: "#3a0b1b" },
-  { key: "SHARK",    label: "SHARK", kind: "event", event: "shark", tint: "#1a0b12" },
-  { key: "CLEAN",    label: "CLEAN", kind: "event", event: "clean", tint: "#0b1a19" },
-  { key: "BLEED",    label: "BLEED", kind: "event", event: "bleed", tint: "#1a0b0b" }
+  // The wheel is intentionally simple and readable.
+  // Multipliers are PROFIT multipliers:
+  // totalReturn = bet + bet*mult
+  { key: "BUST",    label: "BUST",    kind: "mult", mult: -1,  weight: 26, tint: "#0b0712" },
+  { key: "PUSH",    label: "PUSH",    kind: "mult", mult:  0,  weight: 18, tint: "#061428" },
+  { key: "ONE",     label: "1X",      kind: "mult", mult:  1,  weight: 24, tint: "#002a3a" },
+  { key: "TWO",     label: "2X",      kind: "mult", mult:  2,  weight: 12, tint: "#2a003a" },
+  { key: "THREE",   label: "3X",      kind: "mult", mult:  3,  weight:  6, tint: "#1b3a00" },
+  { key: "JACKPOT", label: "JACKPOT", kind: "mult", mult: 12,  weight:  2, tint: "#3a0014" }
 ];
+
+function pickWeighted(segments) {
+  const items = segments || [];
+  let total = 0;
+  for (const s of items) total += Math.max(0, Number(s.weight ?? 1) || 0);
+  if (total <= 0) return Math.floor(Math.random() * Math.max(1, items.length));
+  let r = Math.random() * total;
+  for (let i = 0; i < items.length; i++) {
+    r -= Math.max(0, Number(items[i].weight ?? 1) || 0);
+    if (r <= 0) return i;
+  }
+  return items.length - 1;
+}
 
 export class Roulette {
   constructor(canvas, { segments = DEFAULT_SEGMENTS, audio = null } = {}) {
@@ -34,6 +44,7 @@ export class Roulette {
     this.rot = 0;
     this.spinning = false;
     this._lastIndex = 0;
+    this._lastTickAt = 0;
     this._pattern = this._makePattern();
     this.draw();
   }
@@ -98,13 +109,36 @@ export class Roulette {
       const a0 = start + i * seg;
       const a1 = a0 + seg;
 
-      // Wedge fill
+      // Wedge fill (neon glass feel)
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.arc(0, 0, r, a0, a1);
       ctx.closePath();
-      ctx.fillStyle = s.tint;
+
+      const g = ctx.createRadialGradient(0, 0, r * 0.06, 0, 0, r);
+      g.addColorStop(0, "rgba(0,0,0,0.55)");
+      g.addColorStop(0.42, s.tint);
+      g.addColorStop(1, "rgba(255,255,255,0.10)");
+      ctx.fillStyle = g;
       ctx.fill();
+
+      // Jackpot hazard stripes
+      if (s.key === "JACKPOT") {
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.globalCompositeOperation = "screen";
+        ctx.fillStyle = "rgba(255,212,0,0.7)";
+        for (let k = 0; k < 16; k++) {
+          const rr0 = r * (0.25 + k * 0.04);
+          const rr1 = rr0 + r * 0.018;
+          ctx.beginPath();
+          ctx.arc(0, 0, rr1, a0, a1);
+          ctx.arc(0, 0, rr0, a1, a0, true);
+          ctx.closePath();
+          if (k % 2 === 0) ctx.fill();
+        }
+        ctx.restore();
+      }
 
       // Dither overlay
       ctx.save();
@@ -114,10 +148,14 @@ export class Roulette {
       ctx.fill();
       ctx.restore();
 
-      // Edge line
-      ctx.strokeStyle = "rgba(255,255,255,0.14)";
-      ctx.lineWidth = 2;
+      // Edge line (bright neon)
+      ctx.save();
+      ctx.shadowColor = s.key === "JACKPOT" ? "rgba(255,212,0,0.55)" : "rgba(58,246,255,0.35)";
+      ctx.shadowBlur = s.key === "JACKPOT" ? 16 : 10;
+      ctx.strokeStyle = s.key === "BUST" ? "rgba(255,53,107,0.35)" : "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 2.25;
       ctx.stroke();
+      ctx.restore();
 
       // Label
       const mid = (a0 + a1) / 2;
@@ -125,13 +163,18 @@ export class Roulette {
       ctx.rotate(mid);
       ctx.translate(0, -r * 0.72);
       ctx.rotate(-mid);
-      ctx.font = "900 14px ui-monospace, Menlo, Consolas, 'Courier New', monospace";
+      ctx.font = s.key === "JACKPOT" ? "900 15px ui-monospace, Menlo, Consolas, 'Courier New', monospace" : "900 14px ui-monospace, Menlo, Consolas, 'Courier New', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = "rgba(255,255,255,0.88)";
-      ctx.shadowColor = "rgba(255,75,216,0.22)";
-      ctx.shadowBlur = 10;
-      ctx.fillText(s.label, cx * 0, cy * 0);
+      // Stroke + glow to survive scanlines
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(0,0,0,0.55)";
+      ctx.strokeText(s.label, 0, 0);
+
+      ctx.fillStyle = s.key === "JACKPOT" ? "rgba(255,212,0,0.95)" : "rgba(255,255,255,0.92)";
+      ctx.shadowColor = s.key === "BUST" ? "rgba(255,53,107,0.35)" : s.key === "JACKPOT" ? "rgba(255,212,0,0.55)" : "rgba(255,75,216,0.28)";
+      ctx.shadowBlur = s.key === "JACKPOT" ? 18 : 12;
+      ctx.fillText(s.label, 0, 0);
       ctx.restore();
     }
 
@@ -181,7 +224,7 @@ export class Roulette {
     const n = this.segments.length;
     const seg = TAU / n;
 
-    const targetIndex = Math.floor(Math.random() * n);
+    const targetIndex = pickWeighted(this.segments);
     const desiredOffset = (targetIndex + 0.5) * seg; // where norm(-rot) should land
     const desiredMod = norm(TAU - desiredOffset);    // rot modulo TAU
 
@@ -208,8 +251,12 @@ export class Roulette {
         const idx = this.getIndexAtPointer(this.rot);
         if (idx !== this._lastIndex) {
           this._lastIndex = idx;
-          if (this.audio && typeof this.audio.play === "function") {
-            this.audio.play("tick");
+          const canTick = now - (this._lastTickAt || 0) > 34;
+          if (canTick) {
+            this._lastTickAt = now;
+            if (this.audio && typeof this.audio.play === "function") {
+              this.audio.play("tick");
+            }
           }
         }
 
@@ -218,6 +265,9 @@ export class Roulette {
         } else {
           this.spinning = false;
           const finalIndex = this.getIndexAtPointer(this.rot);
+          if (this.audio && typeof this.audio.play === "function") {
+            this.audio.play("land");
+          }
           resolve({ index: finalIndex, segment: this.segments[finalIndex] });
         }
       };

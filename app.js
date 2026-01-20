@@ -223,6 +223,27 @@ function setHud(text, on){
   el.spinHud.hidden = !on;
 }
 
+function sleep(ms){
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function fxPulse(type){
+  if (!state.motionOn) return;
+  const b = el.body;
+  b.classList.add("fx-hit");
+  b.classList.add("fx-" + type);
+  b.classList.add("hitstop");
+
+  const stopMs = type === "jackpot" ? 100 : 70;
+  setTimeout(() => b.classList.remove("hitstop"), stopMs);
+
+  const totalMs = type === "jackpot" ? 1400 : 520;
+  setTimeout(() => {
+    b.classList.remove("fx-hit");
+    b.classList.remove("fx-win","fx-lose","fx-jackpot");
+  }, totalMs);
+}
+
 async function ensureAudio(){
   if (!state.soundOn) return;
   try{ await audio.init(); }catch{ /* ignore */ }
@@ -418,7 +439,11 @@ async function doSpin(){
   setHud("SPIN", true);
   setStatus("돌아간다...");
 
-  if (state.soundOn) audio.play("lever");
+  if (state.soundOn) {
+    audio.play("lever");
+    audio.play("thump");
+  }
+  if (state.motionOn) await sleep(90);
 
   // Interest first, then bet
   applyInterest();
@@ -426,70 +451,55 @@ async function doSpin(){
 
   state.spins += 1;
 
-  const outcome = await roulette.spin({ duration: state.motionOn ? 2800 : 1400 });
+  // Heavier spin: longer and chunkier.
+  const outcome = await roulette.spin({
+    duration: state.motionOn ? 4600 : 2100,
+    minSpins: 11,
+    maxSpins: 15
+  });
   const seg = outcome.segment;
 
   let won = false;
 
   if (seg.kind === "mult"){
-    const payout = Math.floor(bet * seg.mult);
-    state.cash += payout;
-    const delta = payout - bet;
+    // Profit multiplier wheel (more intuitive):
+    // totalReturn = bet + bet*mult
+    const totalReturn = Math.max(0, bet + Math.floor(bet * (Number(seg.mult) || 0)));
+    const profit = totalReturn - bet;
 
-    if (delta > 0){
+    // Tiny pause before payout to make it feel weighty.
+    await sleep(state.motionOn ? 140 : 0);
+    state.cash += totalReturn;
+
+    if (profit > 0){
       won = true;
       state.streak += 1;
-      setStatus(`승리: ${seg.label} (+${money(delta)})`);
-      pushLog(`WIN ${seg.label} (+${money(delta)})`, "win");
-      if (state.soundOn) audio.play("win");
 
-      if (state.streak >= 3){
-        if (state.soundOn) audio.play("party");
+      if (seg.key === "JACKPOT"){
+        setStatus(`JACKPOT (+${money(profit)})`);
+        pushLog(`JACKPOT (+${money(profit)})`, "win");
+        toast("JACKPOT");
+        fxPulse("jackpot");
+        if (state.soundOn) audio.play("jackpot");
+      } else {
+        setStatus(`승리: ${seg.label} (+${money(profit)})`);
+        pushLog(`WIN ${seg.label} (+${money(profit)})`, "win");
+        fxPulse("win");
+        if (state.soundOn) audio.play("win");
       }
-    } else if (delta === 0){
+
+      if (state.streak >= 3 && state.soundOn) audio.play("party");
+    } else if (profit === 0){
       state.streak = 0;
       setStatus(`무: ${seg.label}`);
       pushLog(`PUSH ${seg.label} (0)`, "event");
       if (state.soundOn) audio.play("tick");
     } else {
       state.streak = 0;
-      setStatus(`패배: ${seg.label} (-${money(-delta)})`);
-      pushLog(`LOSE ${seg.label} (-${money(-delta)})`, "lose");
+      setStatus(`패배: ${seg.label} (-${money(-profit)})`);
+      pushLog(`LOSE ${seg.label} (-${money(-profit)})`, "lose");
+      fxPulse("lose");
       if (state.soundOn) audio.play("lose");
-    }
-  }
-
-  if (seg.kind === "event"){
-    state.streak = 0;
-
-    if (seg.event === "clean"){
-      state.cleanse = clamp(0, state.cleanse + 1, 2);
-      state.rateMod = clamp(0.6, state.rateMod - 0.08, 1.8);
-      setStatus("CLEAN: 노이즈가 가라앉는다.");
-      pushLog("CLEAN: 부패 -1 (임시)", "event");
-      toast("CLEAN");
-      if (state.soundOn) audio.play("tick");
-    }
-
-    if (seg.event === "bleed"){
-      const cut = Math.min(state.cash, Math.floor(bet * 0.5));
-      state.cash -= cut;
-      state.corruptionBonus = clamp(0, (state.corruptionBonus || 0) + 1, 5);
-      setStatus("BLEED: 피가 새는 소리.");
-      pushLog(`BLEED: 현금 -${money(cut)} / 부패 +1`, "lose");
-      toast("BLEED");
-      if (state.soundOn) audio.play("lose");
-    }
-
-    if (seg.event === "shark"){
-      const spike = Math.floor(400000 + Math.random() * 1200000);
-      state.debt += spike;
-      state.rateMod = clamp(0.6, state.rateMod + 0.08, 1.8);
-      setStatus("SHARK: 금리가 웃는다.");
-      pushLog(`SHARK: 빚 +${money(spike)} / 금리↑`, "event");
-      toast("SHARK");
-      if (state.soundOn) audio.play("shark");
-      maybeSeize();
     }
   }
 
@@ -520,6 +530,20 @@ function renderAll(){
 function bind(){
   // Prevent the anatomy panel from ever blocking taps/clicks
   el.anatomySvg.style.pointerEvents = "none";
+
+  const syncBet = () => {
+    let v = Math.floor(Number(el.bet.value) || 0);
+    if (!Number.isFinite(v) || v < 0) v = 0;
+    // Keep it chunky (money feel)
+    v = Math.round(v / 1000) * 1000;
+    el.bet.value = String(v);
+    if (!busy) {
+      setStatus(`BET: ${money(v)}  |  레버를 당겨.`);
+    }
+  };
+  el.bet.addEventListener("input", syncBet);
+  el.bet.addEventListener("change", syncBet);
+  syncBet();
 
   el.spinBtn.addEventListener("click", doSpin);
   el.lever.addEventListener("click", doSpin);

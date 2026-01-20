@@ -1,4 +1,4 @@
-const CACHE = "gwl-v3-2026-01-20";
+const CACHE = "gwl-v3-2026-01-20-neon1";
 
 const CORE = [
   "./",
