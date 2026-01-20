@@ -142,18 +142,23 @@ export class AudioEngine {
 
     // Fallback synthesized
     if (name === "tick") {
-      // Click + short ping
-      this._noiseShot(t, 0.05, 0.16, 1200);
+      // Mechanical click (no "cartoon" beep)
+      this._noiseShot(t, 0.055, 0.14, 1400);
+
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
-      o.type = "square";
-      o.frequency.setValueAtTime(980, t);
-      o.frequency.exponentialRampToValueAtTime(640, t + 0.025);
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(1800, t);
+
+      o.type = "triangle";
+      o.frequency.setValueAtTime(240 + Math.random() * 20, t);
+      o.frequency.exponentialRampToValueAtTime(170, t + 0.04);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.10, t + 0.004);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-      o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.055, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      o.connect(lp); lp.connect(g); g.connect(out);
+      o.start(t); o.stop(t + 0.08);
       return;
     }
 
@@ -190,32 +195,42 @@ export class AudioEngine {
     }
 
     if (name === "win") {
-      this._noiseShot(t, 0.08, 0.12, 900);
-      const o = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      o.type = "sawtooth";
-      o.frequency.setValueAtTime(520, t);
-      o.frequency.exponentialRampToValueAtTime(1040, t + 0.10);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.20, t + 0.008);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
-      o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.18);
+      // Warm neon "chime" (less harsh than sawtooth)
+      this._noiseShot(t, 0.05, 0.09, 1300);
+      const freqs = [523.25, 659.25, 783.99]; // C5 E5 G5
+      for (let i = 0; i < freqs.length; i++) {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = i === 1 ? "sine" : "triangle";
+        const f = freqs[i];
+        o.frequency.setValueAtTime(f * 1.03, t);
+        o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.09, t + 0.010);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+        o.connect(g); g.connect(out);
+        o.start(t);
+        o.stop(t + 0.26);
+      }
       return;
     }
 
     if (name === "lose") {
-      this._noiseShot(t, 0.09, 0.18, 650);
+      // Low "drop" with a soft grit
+      this._noiseShot(t, 0.07, 0.16, 520);
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
-      o.type = "sawtooth";
-      o.frequency.setValueAtTime(320, t);
-      o.frequency.exponentialRampToValueAtTime(110, t + 0.16);
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(800, t);
+      o.type = "sine";
+      o.frequency.setValueAtTime(150, t);
+      o.frequency.exponentialRampToValueAtTime(72, t + 0.22);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.24, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
-      o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.22);
+      g.gain.exponentialRampToValueAtTime(0.28, t + 0.010);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.30);
+      o.connect(lp); lp.connect(g); g.connect(out);
+      o.start(t); o.stop(t + 0.34);
       return;
     }
 
@@ -249,52 +264,69 @@ export class AudioEngine {
     }
 
     if (name === "party") {
-      for (let i = 0; i < 6; i++) {
+      // Smooth arpeggio (no arcade beep spam)
+      const notes = [659.25, 783.99, 987.77, 1318.51]; // E5 G5 B5 E6
+      for (let i = 0; i < notes.length; i++) {
         const o = this.ctx.createOscillator();
         const g = this.ctx.createGain();
-        o.type = "square";
-        const start = t + i * 0.03;
-        o.frequency.setValueAtTime(800 + Math.random()*900, start);
-        g.gain.setValueAtTime(0.0001, start);
-        g.gain.exponentialRampToValueAtTime(0.12, start + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
+        const st = t + i * 0.07;
+        o.type = "triangle";
+        o.frequency.setValueAtTime(notes[i], st);
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.08, st + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.22);
         o.connect(g); g.connect(out);
-        o.start(start); o.stop(start + 0.17);
+        o.start(st); o.stop(st + 0.26);
       }
     }
 
     if (name === "jackpot") {
-      // Bright neon jackpot sting: chord stabs + noisy splash
-      this._noiseShot(t, 0.35, 0.22, 380);
+      // Big, dramatic... but listenable
+      this._noiseShot(t, 0.28, 0.22, 420);
 
-      const freqs = [392, 523.25, 659.25, 1046.5]; // G4 C5 E5 C6
+      // Sub hit
+      {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(88, t);
+        o.frequency.exponentialRampToValueAtTime(48, t + 0.22);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.30, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + 0.32);
+      }
+
+      // Chord swell
+      const freqs = [392, 523.25, 659.25, 783.99]; // G4 C5 E5 G5
       for (let i = 0; i < freqs.length; i++) {
         const o = this.ctx.createOscillator();
         const g = this.ctx.createGain();
-        o.type = i % 2 === 0 ? "square" : "sawtooth";
-        const st = t + i * 0.02;
+        const st = t + 0.03 + i * 0.02;
+        o.type = "triangle";
         o.frequency.setValueAtTime(freqs[i], st);
-        o.frequency.exponentialRampToValueAtTime(freqs[i] * 1.18, st + 0.12);
         g.gain.setValueAtTime(0.0001, st);
-        g.gain.exponentialRampToValueAtTime(0.18, st + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.22);
+        g.gain.exponentialRampToValueAtTime(0.14, st + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.38);
         o.connect(g); g.connect(out);
         o.start(st);
-        o.stop(st + 0.28);
+        o.stop(st + 0.44);
       }
-      // Trailing sparkle
-      for (let k = 0; k < 8; k++) {
+
+      // Gentle sparkle tail
+      for (let k = 0; k < 5; k++) {
         const o = this.ctx.createOscillator();
         const g = this.ctx.createGain();
-        const st = t + 0.18 + k * 0.03;
-        o.type = "triangle";
-        o.frequency.setValueAtTime(900 + Math.random() * 1500, st);
+        const st = t + 0.22 + k * 0.06;
+        o.type = "sine";
+        o.frequency.setValueAtTime(860 + Math.random() * 820, st);
         g.gain.setValueAtTime(0.0001, st);
-        g.gain.exponentialRampToValueAtTime(0.12, st + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.12);
+        g.gain.exponentialRampToValueAtTime(0.07, st + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.18);
         o.connect(g); g.connect(out);
         o.start(st);
-        o.stop(st + 0.14);
+        o.stop(st + 0.22);
       }
     }
   }

@@ -439,8 +439,11 @@ body.reduce-motion *{
 .wheel-stage::before{
   content:"";
   position:absolute;
-  width:540px;
-  height:540px;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%);
+  width:500px;
+  height:500px;
   border-radius:50%;
   background:
     conic-gradient(from 90deg,
@@ -451,28 +454,34 @@ body.reduce-motion *{
       rgba(60,255,134,0.42),
       rgba(58,246,255,0.0)
     );
-  opacity:0.30;
-  filter: blur(0.8px);
-  animation: ring-spin 7.2s linear infinite;
+  opacity:0.16;
+  filter: blur(0.6px);
+  animation: ring-spin 11s linear infinite;
   z-index:0;
 }
 .wheel-stage::after{
   content:"";
   position:absolute;
-  width:520px;
-  height:520px;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%);
+  width:460px;
+  height:460px;
   border-radius:50%;
   background: radial-gradient(circle at 50% 50%, rgba(58,246,255,0.10), transparent 60%),
               radial-gradient(circle at 40% 60%, rgba(255,75,216,0.08), transparent 62%);
-  opacity:0.55;
-  filter: blur(1.2px);
+  opacity:0.22;
+  filter: blur(0.9px);
   z-index:0;
 }
-@keyframes ring-spin{ to{ transform: rotate(360deg);} }
-#roulette{position:relative; z-index:1; animation: wheel-pulse 2.8s ease-in-out infinite; }
-@keyframes wheel-pulse{
-  0%, 100%{filter: drop-shadow(0 0 18px rgba(58,246,255,0.35)) drop-shadow(0 0 22px rgba(255,75,216,0.24));}
-  50%{filter: drop-shadow(0 0 28px rgba(58,246,255,0.50)) drop-shadow(0 0 32px rgba(255,75,216,0.36));}
+@keyframes ring-spin{
+  0%{transform:translate(-50%, -50%) rotate(0deg)}
+  100%{transform:translate(-50%, -50%) rotate(360deg)}
+}
+#roulette{position:relative; z-index:1; animation: wheel-flicker 5.8s ease-in-out infinite; }
+@keyframes wheel-flicker{
+  0%, 100%{filter: drop-shadow(0 0 14px rgba(58,246,255,0.28)) drop-shadow(0 0 18px rgba(255,75,216,0.18));}
+  50%{filter: drop-shadow(0 0 18px rgba(58,246,255,0.36)) drop-shadow(0 0 22px rgba(255,75,216,0.24));}
 }
 
 /* Meter: more arcade cabinet glow */

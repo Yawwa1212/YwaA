@@ -89,7 +89,7 @@ export class Roulette {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.shadowColor = "rgba(58,246,255,0.25)";
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.arc(0, 0, r + 6, 0, TAU);
     ctx.strokeStyle = "rgba(255,255,255,0.06)";
@@ -151,7 +151,7 @@ export class Roulette {
       // Edge line (bright neon)
       ctx.save();
       ctx.shadowColor = s.key === "JACKPOT" ? "rgba(255,212,0,0.55)" : "rgba(58,246,255,0.35)";
-      ctx.shadowBlur = s.key === "JACKPOT" ? 16 : 10;
+      ctx.shadowBlur = s.key === "JACKPOT" ? 12 : 7;
       ctx.strokeStyle = s.key === "BUST" ? "rgba(255,53,107,0.35)" : "rgba(255,255,255,0.18)";
       ctx.lineWidth = 2.25;
       ctx.stroke();
@@ -173,7 +173,7 @@ export class Roulette {
 
       ctx.fillStyle = s.key === "JACKPOT" ? "rgba(255,212,0,0.95)" : "rgba(255,255,255,0.92)";
       ctx.shadowColor = s.key === "BUST" ? "rgba(255,53,107,0.35)" : s.key === "JACKPOT" ? "rgba(255,212,0,0.55)" : "rgba(255,75,216,0.28)";
-      ctx.shadowBlur = s.key === "JACKPOT" ? 18 : 12;
+      ctx.shadowBlur = s.key === "JACKPOT" ? 12 : 8;
       ctx.fillText(s.label, 0, 0);
       ctx.restore();
     }
@@ -201,7 +201,7 @@ export class Roulette {
     ctx.textBaseline = "middle";
     ctx.fillStyle = "rgba(255,255,255,0.88)";
     ctx.shadowColor = "rgba(58,246,255,0.28)";
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 8;
     ctx.fillText("GWL", 0, 1);
 
     ctx.restore();
