@@ -92,6 +92,9 @@ export class Roulette {
     ctx.lineWidth = 2;
     ctx.stroke();
 
+    ctx.save();
+    ctx.rotate(this.rot);
+
     const n = this.segments.length;
     const seg = TAU / n;
     const start = -Math.PI / 2;
@@ -130,9 +133,15 @@ export class Roulette {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = isJackpot ? "#000" : "rgba(255,255,255,0.92)";
-      ctx.fillText(s.label, 0, 0);
+      const text = String(s.label ?? s.key ?? "");
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = isJackpot ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.92)";
+      ctx.strokeText(text, 0, 0);
+      ctx.fillText(text, 0, 0);
       ctx.restore();
     }
+
+    ctx.restore();
 
     // Hub
     ctx.beginPath();
