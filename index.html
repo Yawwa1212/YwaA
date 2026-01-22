@@ -9,24 +9,26 @@
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#000000" />
 </head>
-<body class="mood-neutral corruption-0" data-corruption="0">
+<body class="mood-vegas">
+  <div class="fx fx-sparkle" aria-hidden="true"></div>
+  <div class="fx fx-marquee" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand">
-      <div class="brand-title" data-text="GANG WON LAND">GANG WON LAND</div>
-      <div class="brand-sub">cyberpunk dot • analog horror • roulette debt simulator</div>
+      <div class="brand-title">GANG WON LAND</div>
+      <div class="brand-sub">las vegas • neon roulette • debt</div>
     </div>
     <div class="topbar-right">
       <div class="meter" title="현재 자산(현금-빚)">
         <div class="meter-label">NET</div>
-        <div class="meter-value" id="netWorth">300pen</div>
+        <div class="meter-value" id="netWorth">0pen</div>
       </div>
       <button class="ghost" id="toggleSound" type="button">SOUND: ON</button>
       <button class="ghost" id="toggleMotion" type="button">MOTION: ON</button>
     </div>
   </header>
 
-  <main class="shell" id="shell">
+  <main class="shell">
     <section class="panel wheel-panel">
       <div class="wheel-header">
         <div class="wheel-title">ROULETTE CORE</div>
@@ -35,109 +37,57 @@
 
       <div class="wheel-stage">
         <div class="pointer" aria-hidden="true"></div>
-        <div class="wheel-glass" aria-hidden="true"></div>
-        <canvas id="roulette" width="460" height="460" aria-label="룰렛"></canvas>
-        <div class="spin-hud" id="spinHud" aria-hidden="true">
-          <div class="hud-text" id="hudText">SPIN</div>
-        </div>
+        <canvas id="roulette" width="520" height="520" aria-label="룰렛"></canvas>
+        <button class="spin-center" id="spinBtn" type="button">SPIN</button>
       </div>
 
-      <div class="lever-zone">
-        <div class="lever-wrap">
-          <button id="lever" type="button" aria-label="레버 당기기">
-            <span class="lever-base" aria-hidden="true"></span>
-            <span class="lever-shaft" aria-hidden="true"></span>
-            <span class="lever-knob" aria-hidden="true"></span>
-          </button>
-          <div class="pull-label" id="pullLabel" aria-hidden="true">PULL!</div>
+      <div class="betbox">
+        <div class="bethead">
+          <div class="bet-title">BET MAP</div>
+          <div class="bet-total">TOTAL: <span id="betTotal">0pen</span></div>
         </div>
 
-        
-          <div class="controls">
-            <div class="betbox">
-              <div class="bethead">
-                <div class="bettitle">BET MAP</div>
-                <div class="bettotal" id="betTotal">TOTAL: 0pen</div>
-              </div>
+        <div class="betgrid">
+          <label class="bet bet-20">
+            <span class="bet-k">20x</span>
+            <input id="bet20" type="number" min="0" step="1" value="0" />
+          </label>
+          <label class="bet bet-10">
+            <span class="bet-k">10x</span>
+            <input id="bet10" type="number" min="0" step="1" value="0" />
+          </label>
+          <label class="bet bet-3">
+            <span class="bet-k">3x</span>
+            <input id="bet3" type="number" min="0" step="1" value="0" />
+          </label>
+          <label class="bet bet-1">
+            <span class="bet-k">1 (2x)</span>
+            <input id="bet1" type="number" min="0" step="1" value="0" />
+          </label>
+        </div>
 
-              <div class="betgrid" aria-label="베팅">
-                <label class="betrow">
-                  <span class="bkey">20</span>
-                  <input id="bet20" type="number" inputmode="numeric" min="0" step="1" value="0" />
-                </label>
-                <label class="betrow">
-                  <span class="bkey">10</span>
-                  <input id="bet10" type="number" inputmode="numeric" min="0" step="1" value="0" />
-                </label>
-                <label class="betrow">
-                  <span class="bkey">5</span>
-                  <input id="bet5" type="number" inputmode="numeric" min="0" step="1" value="0" />
-                </label>
-                <label class="betrow">
-                  <span class="bkey">3</span>
-                  <input id="bet3" type="number" inputmode="numeric" min="0" step="1" value="0" />
-                </label>
-                <label class="betrow">
-                  <span class="bkey">1</span>
-                  <input id="bet1" type="number" inputmode="numeric" min="0" step="1" value="0" />
-                </label>
-              </div>
+        <div class="actions">
+          <button class="secondary" id="borrowBtn" type="button">대출</button>
+          <button class="secondary" id="repayBtn" type="button">상환</button>
+          <label class="vol">
+            <span>VOL</span>
+            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65" />
+          </label>
+        </div>
 
-              <div class="row">
-                <button class="primary" id="spinBtn" type="button">SPIN</button>
-              </div>
-
-              <div class="row">
-                <button class="secondary" id="borrowBtn" type="button">대출</button>
-                <button class="secondary" id="repayBtn" type="button">상환</button>
-              </div>
-
-              <div class="row slim">
-                <label class="field inline">
-                  <span>VOL</span>
-                  <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" />
-                </label>
-              </div>
-            </div>
-
-<div class="rules" id="rules">
-  <div class="rules-title">RULES</div>
-  <div class="rules-body">
-    • 룰렛 숫자별로 베팅 가능: 20 / 10 / 5 / 3 / 1
-    • SPIN하면 총 베팅(TOTAL)을 먼저 차감하고, 나온 숫자에 걸린 금액만 지급.
-    • 지급 배수: 20→20배, 10→10배, 5→5배, 3→3배, 1→2배(규칙: 1은 그냥 2배).
-    • 대출은 현금이 0pen일 때만 가능. 총 1000pen 한도.
-      - 1~2번째: 333pen
-      - 3번째(마지막): 334pen (경고 문구 표시)
-    • 마지막 대출 이후에도 못 갚으면, 장기 1개당 200pen 대출.
-    • 이자 없음.
-  </div>
-</div>
-
-          </div>
-</div>
+        <div class="rules">
+          <div class="rules-title">RULES</div>
+          <div class="rules-body" id="rulesText"></div>
+        </div>
       </div>
     </section>
 
     <section class="panel stats-panel">
       <div class="stats">
-        <div class="stat">
-          <div class="k">현금</div>
-          <div class="v" id="cash">300pen</div>
-        </div>
-        <div class="stat">
-          <div class="k">빚</div>
-          <div class="v" id="debt">0pen</div>
-        </div>
-<div class="stat">
-          <div class="k">연승</div>
-          <div class="v" id="streak">0</div>
-        </div>
-</div>
-
-      <div class="organs-card">
-        <div class="card-title">장기 재고</div>
-        <div class="organs" id="organChips" aria-label="남은 장기"></div>
+        <div class="stat"><div class="k">현금</div><div class="v" id="cash">0pen</div></div>
+        <div class="stat"><div class="k">빚</div><div class="v" id="debt">0pen</div></div>
+        <div class="stat"><div class="k">BOOST</div><div class="v" id="boost">x1</div></div>
+        <div class="stat"><div class="k">연승</div><div class="v" id="streak">0</div></div>
       </div>
 
       <div class="log-card">
@@ -147,42 +97,17 @@
     </section>
   </main>
 
-  <aside class="anatomy" aria-label="인체 해부도">
-    <div class="anatomy-title">HUMAN BLUEPRINT</div>
-    <object id="anatomySvg" type="image/svg+xml" data="assets/img/anatomy.svg" aria-label="인체 해부도"></object>
-  </aside>
-
-  <div class="modal" id="loanModal" role="dialog" aria-modal="true" aria-labelledby="loanTitle" hidden>
+  <div class="modal" id="loanModal" role="dialog" aria-modal="true" hidden>
     <div class="modal-card">
       <div class="modal-head">
         <div class="modal-title" id="loanTitle">대출</div>
         <button class="ghost" id="loanClose" type="button">닫기</button>
       </div>
-
       <div class="modal-body">
-        <p class="muted" id="loanHint">PEN을 다 탕진해야 대출 가능. 총 한도 1000pen (333/333/334). 마지막 대출은 경고가 뜬다.</p>
-        <label class="field">
-          <span id="loanAmountLabel">금액</span>
-          <input id="loanAmount" type="number" inputmode="numeric" min="0" step="100000" value="0" />
-        </label>
-
+        <p class="muted" id="loanHint"></p>
         <div class="row">
-          <button class="primary" id="loanConfirm" type="button">확인</button>
+          <button class="primary" id="loanConfirm" type="button">대출 받기</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-
-  <div class="modal" id="organModal" role="dialog" aria-modal="true" aria-labelledby="organTitle" hidden>
-    <div class="modal-card">
-      <div class="modal-head">
-        <div class="modal-title" id="organTitle">압류</div>
-        <button class="ghost" id="organClose" type="button">닫기</button>
-      </div>
-      <div class="modal-body">
-        <p id="organText" class="muted">남은 장기 중 하나를 선택해.</p>
-        <div class="organ-grid" id="organGrid"></div>
       </div>
     </div>
   </div>

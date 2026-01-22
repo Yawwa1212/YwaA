@@ -1,22 +1,5 @@
-/* Minimal FX layer (monochrome) */
-.fx{display:none !important}
 
-/* Subtle hitstop shake (kept for "무거운" 조작감) */
-body.hitstop .shell,
-body.hitstop .topbar{
-  animation: hit-shake 140ms steps(2) 1;
-}
-
-@keyframes hit-shake{
-  0%{transform:translate3d(0,0,0)}
-  25%{transform:translate3d(-1px,0,0)}
-  50%{transform:translate3d(1px,0,0)}
-  75%{transform:translate3d(0,-1px,0)}
-  100%{transform:translate3d(0,0,0)}
-}
-
-@keyframes lever-neutral{
-  0%{transform:rotate(0deg)}
-  35%{transform:rotate(10deg)}
-  100%{transform:rotate(0deg)}
-}
+body.hitstop{transform:scale(0.998)}
+body.fx-win{filter:brightness(1.08) saturate(1.12)}
+body.fx-lose{filter:brightness(0.95) saturate(0.92)}
+body.fx-boost{filter:brightness(1.04) saturate(1.16)}

@@ -1,232 +1,145 @@
-const TAU = Math.PI * 2;
 
-function norm(a) {
-  a = a % TAU;
-  if (a < 0) a += TAU;
-  return a;
-}
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-// Slots: 12 wedges (no blanks)
-// 20: 1 slot (rare)
-// 10/5/3/1: distributed for readable probability
-// Note: "1" pays 2x total return (user rule)
-function makeSegments() {
-  const segs = [];
-  const pushN = (key, label, payout, n) => {
-    for (let i = 0; i < n; i++) segs.push({ key, label, kind: "payout", payout });
-  };
-
-  pushN("20", "20", 20, 1);
-  pushN("10", "10", 10, 2);
-  pushN("5",  "5",   5, 2);
-  pushN("3",  "3",   3, 3);
-  pushN("1",  "1",   2, 4); // 1 => 2x
-  return segs;
-}
-
-
-function shuffleInPlace(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j = (Math.random()*(i+1))|0;
-    const t = arr[i]; arr[i]=arr[j]; arr[j]=t;
+export function pickWeighted(segments){
+  const total = segments.reduce((a,s)=>a+(s.weight||1),0);
+  let r = Math.random()*total;
+  for(let i=0;i<segments.length;i++){
+    r -= (segments[i].weight||1);
+    if(r<=0) return i;
   }
-  return arr;
+  return segments.length-1;
 }
 
-export const DEFAULT_SEGMENTS = shuffleInPlace(makeSegments());
-
-function pickWeighted(segments) {
-  const items = segments || [];
-  let total = 0;
-  for (const s of items) total += Math.max(0, Number(s.weight ?? 1) || 0);
-  if (total <= 0) return Math.floor(Math.random() * Math.max(1, items.length));
-  let r = Math.random() * total;
-  for (let i = 0; i < items.length; i++) {
-    r -= Math.max(0, Number(items[i].weight ?? 1) || 0);
-    if (r <= 0) return i;
+export class RouletteWheel{
+  constructor(canvas, audio){
+    this.canvas=canvas;
+    this.ctx=canvas.getContext("2d");
+    this.audio=audio;
+    this.rot=0;
+    this.segments=[];
+    this._raf=0;
   }
-  return items.length - 1;
-}
 
-export class Roulette {
-  constructor(canvas, { segments = DEFAULT_SEGMENTS, audio = null } = {}) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
-    this.audio = audio;
-    this.segments = segments.slice();
-
-    this.rot = 0;
-    this.spinning = false;
-
-    this._lastIndex = 0;
-    this._lastTickAt = 0;
+  setSegments(arr){
+    this.segments = arr.slice();
     this.draw();
   }
 
-  setSegments(segments) {
-    this.segments = (segments || []).slice();
-    this._lastIndex = this.getIndexAtPointer();
-    this.draw();
-  }
+  draw(){
+    const ctx=this.ctx;
+    const w=this.canvas.width, h=this.canvas.height;
+    const cx=w/2, cy=h/2;
+    const R=Math.min(w,h)/2 - 14;
+    const inner=R*0.20;
 
-  getIndexAtPointer(rot = this.rot) {
-    const seg = TAU / this.segments.length;
-    const offset = norm(-rot);
-    return Math.floor(offset / seg) % this.segments.length;
-  }
-
-  draw() {
-    const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
-    const r = Math.min(w, h) * 0.46;
-
-    ctx.clearRect(0, 0, w, h);
-
-    // Outer ring
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 1.03, 0, TAU);
-    ctx.fillStyle = "#000";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.55)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.clearRect(0,0,w,h);
 
     ctx.save();
+    ctx.translate(cx,cy);
+    ctx.strokeStyle="rgba(255,255,255,0.22)";
+    ctx.lineWidth=8;
+    ctx.beginPath(); ctx.arc(0,0,R+4,0,Math.PI*2); ctx.stroke();
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,R-6,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    const n=this.segments.length;
+    const step = (Math.PI*2)/n;
+
+    ctx.save();
+    ctx.translate(cx,cy);
     ctx.rotate(this.rot);
 
-    const n = this.segments.length;
-    const seg = TAU / n;
-    const start = -Math.PI / 2;
+    for(let i=0;i<n;i++){
+      const seg=this.segments[i];
+      const a0 = -Math.PI/2 + i*step;
+      const a1 = a0 + step;
 
-    for (let i = 0; i < n; i++) {
-      const s = this.segments[i];
-      const a0 = start + i * seg;
-      const a1 = a0 + seg;
-      const isJackpot = s.key === "20";
-
-      // Wedge
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, r, a0, a1);
+      ctx.moveTo(0,0);
+      ctx.arc(0,0,R,a0,a1);
       ctx.closePath();
-
-      let fill = (i % 2 === 0) ? "#070707" : "#0c0c0c";
-      if (isJackpot) fill = "#fff";
-      ctx.fillStyle = fill;
+      ctx.fillStyle = seg.fill || "#111";
       ctx.fill();
 
-      // Lines (lots)
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle="rgba(255,255,255,0.28)";
+      ctx.lineWidth=2;
       ctx.stroke();
 
-      // Label (small, minimal)
-      const mid = (a0 + a1) / 2;
+      const mid=(a0+a1)/2;
+      const rLabel=R*0.70;
       ctx.save();
       ctx.rotate(mid);
-      ctx.translate(0, -r * 0.62);
-      ctx.rotate(-mid);
+      ctx.translate(rLabel,0);
+      ctx.rotate(Math.PI/2);
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.font="900 22px ui-monospace, Menlo, Consolas, monospace";
 
-      const fs = (n >= 30) ? 10 : (n >= 20 ? 12 : 16);
-      ctx.font = `900 ${fs}px ui-monospace, Menlo, Consolas, Courier New, monospace`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = isJackpot ? "#000" : "rgba(255,255,255,0.92)";
-      const text = String(s.label ?? s.key ?? "");
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = isJackpot ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.92)";
-      ctx.strokeText(text, 0, 0);
-      ctx.fillText(text, 0, 0);
+      const label = seg.label;
+      ctx.lineWidth=4;
+      ctx.strokeStyle="rgba(0,0,0,0.9)";
+      ctx.strokeText(label,0,0);
+      ctx.fillStyle= seg.text || "#fff";
+      ctx.fillText(label,0,0);
+
       ctx.restore();
     }
 
-    ctx.restore();
-
-    // Hub
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.22, 0, TAU);
-    ctx.fillStyle = "#000";
+    ctx.arc(0,0,inner,0,Math.PI*2);
+    ctx.fillStyle="rgba(0,0,0,0.75)";
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.65)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Hub ticks
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.14, 0, TAU);
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle="rgba(255,255,255,0.30)";
+    ctx.lineWidth=2;
     ctx.stroke();
 
     ctx.restore();
   }
 
-  async spin({ duration = 2400, minSpins = 6, maxSpins = 9 } = {}) {
-    if (this.spinning) return null;
-    this.spinning = true;
-
-    const n = this.segments.length;
-    const seg = TAU / n;
+  async spin({duration=3600, minSpins=8, maxSpins=11}={}){
+    const n=this.segments.length;
+    if(n===0) return null;
 
     const targetIndex = pickWeighted(this.segments);
-    const desiredOffset = (targetIndex + 0.5) * seg; // where norm(-rot) should land
-    const desiredMod = norm(TAU - desiredOffset);    // rot modulo TAU
+    const step = (Math.PI*2)/n;
 
-    const currentMod = norm(this.rot);
-    const delta = norm(desiredMod - currentMod);
+    const targetAngle = -Math.PI/2 + (targetIndex+0.5)*step;
+    const desired = (-Math.PI/2) - targetAngle;
 
-    const spins = minSpins + Math.floor(Math.random() * (maxSpins - minSpins + 1));
-    const startRot = this.rot;
-    const endRot = startRot + spins * TAU + delta;
+    const spins = (minSpins + Math.random()*(maxSpins-minSpins));
+    const start = this.rot;
+    let end = desired + spins*(Math.PI*2);
+    while(end < start + Math.PI*2) end += Math.PI*2;
 
     const t0 = performance.now();
+    const ease = (p)=>1-Math.pow(1-p,3);
 
-    return await new Promise((resolve) => {
-      const step = (now) => {
-        const t = Math.min(1, (now - t0) / duration);
-        const e = easeOutCubic(t);
+    return await new Promise((resolve)=>{
+      const tickEvery = 80;
+      let lastTick=0;
 
-        // subtle wobble
-        const wobble = this.spinning ? Math.sin(now / 130) * 0.0010 : 0;
-
-        this.rot = startRot + (endRot - startRot) * e + wobble;
+      const frame = (now)=>{
+        const p = Math.min(1, (now-t0)/duration);
+        const e = ease(p);
+        this.rot = start + (end-start)*e;
         this.draw();
 
-        // Tick on wedge boundaries
-        const idx = this.getIndexAtPointer(this.rot);
-        if (idx !== this._lastIndex) {
-          this._lastIndex = idx;
-          if (this.audio && typeof this.audio.play === "function") {
-            const since = now - (this._lastTickAt || 0);
-            if (since > 28) { // limit tick spam
-              this.audio.play("tick");
-              this._lastTickAt = now;
-            }
-          }
+        if(this.audio && (now-lastTick>tickEvery) && p<0.98){
+          this.audio.play("tick");
+          lastTick=now;
         }
 
-        if (t < 1) {
-          requestAnimationFrame(step);
-        } else {
-          this.spinning = false;
-          const finalIndex = this.getIndexAtPointer(this.rot);
-          if (this.audio && typeof this.audio.play === "function") {
-            this.audio.play("land");
-          }
-          resolve({ index: finalIndex, segment: this.segments[finalIndex] });
+        if(p<1){
+          this._raf=requestAnimationFrame(frame);
+        }else{
+          if(this.audio) this.audio.play("land");
+          const angleWheel = (-Math.PI/2) - this.rot;
+          let idx = Math.floor(((angleWheel - (-Math.PI/2)) / step)) % n;
+          if(idx<0) idx += n;
+          resolve({ index: idx, segment: this.segments[idx] });
         }
       };
-      requestAnimationFrame(step);
+      this._raf=requestAnimationFrame(frame);
     });
   }
 }

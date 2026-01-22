@@ -1,9 +1,18 @@
-// Placeholder module (not included in provided paste)
-export const Storage = {
-  load(key, fallback=null){
-    try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch{ return fallback; }
-  },
-  save(key, value){
-    try{ localStorage.setItem(key, JSON.stringify(value)); }catch{ /* ignore */ }
-  }
-};
+
+const KEY = "gwl_state_vegas_v1";
+
+export function loadState(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch{ return null; }
+}
+
+export function saveState(s){
+  try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch{}
+}
+
+export function resetState(){
+  try{ localStorage.removeItem(KEY); }catch{}
+}
