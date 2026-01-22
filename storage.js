@@ -1,18 +1,21 @@
-
-const KEY = "gwl_state_vegas_v1";
+const KEY = "gwl_solid_v2";
 
 export function loadState(){
   try{
     const raw = localStorage.getItem(KEY);
-    if(!raw) return null;
+    if (!raw) return null;
     return JSON.parse(raw);
-  }catch{ return null; }
+  }catch{
+    return null;
+  }
 }
 
-export function saveState(s){
-  try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch{}
+export function saveState(state){
+  try{
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }catch{}
 }
 
-export function resetState(){
+export function clearState(){
   try{ localStorage.removeItem(KEY); }catch{}
 }

@@ -1,270 +1,314 @@
-
-import { AudioEngine } from "./audio.js";
-import { RouletteWheel } from "./roulette.js";
+import { SEGMENTS, drawWheel, spinPlan, buildBetOptions, colorForKey } from "./roulette.js";
 import { loadState, saveState } from "./storage.js";
+import { AudioEngine } from "./audio.js";
 
-function clamp01(x){return Math.max(0, Math.min(1, x));}
-function money(n){ return `${Math.max(0, Math.floor(n))}pen`; }
-function nowTag(){
-  const d=new Date();
-  const hh=String(d.getHours()).padStart(2,"0");
-  const mm=String(d.getMinutes()).padStart(2,"0");
-  const ss=String(d.getSeconds()).padStart(2,"0");
-  return `[${hh}:${mm}:${ss}]`;
-}
+const $ = (id) => document.getElementById(id);
+const clamp = (v,min,max)=> Math.max(min, Math.min(max, v));
+const now = ()=> performance.now();
 
-const POOL = [
-  { key:"20", label:"20", kind:"pos", mult:20, count:1, fill:"rgba(255,210,63,0.22)", text:"#ffd23f" },
-  { key:"10", label:"10", kind:"pos", mult:10, count:3, fill:"rgba(255,75,216,0.20)", text:"#ff4bd8" },
-  { key:"3",  label:"3",  kind:"pos", mult:3,  count:5, fill:"rgba(58,246,255,0.18)", text:"#3af6ff" },
-  { key:"1",  label:"1",  kind:"pos1",mult:2,  count:10,fill:"rgba(255,255,255,0.10)", text:"#ffffff" },
-  { key:"-2", label:"-2", kind:"neg", mult:-2, count:5, fill:"rgba(255,53,107,0.18)", text:"#ff356b" },
-  { key:"-10",label:"-10",kind:"neg", mult:-10,count:1, fill:"rgba(255,0,0,0.16)", text:"#ff0000" },
-  { key:"BOOST", label:"★", kind:"boost", mult:0, count:1, fill:"rgba(124,255,107,0.16)", text:"#7CFF6B" }
-];
+const state = (() => {
+  const s = loadState();
+  if (s && typeof s.cash === "number") return s;
+  return { cash: 30, debt: 0, boost: 1, loanCount: 0, bets: {}, lastPick: null };
+})();
 
-function buildWheel(){
-  const wedges=[];
-  for(const s of POOL){
-    for(let i=0;i<s.count;i++) wedges.push({ ...s });
-  }
-  for(let i=wedges.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [wedges[i],wedges[j]]=[wedges[j],wedges[i]];
-  }
-  return wedges;
-}
-
-const DEFAULT_STATE = {
-  cash: 30,
-  debt: 0,
-  boost: 1,
-  streak: 0,
-  soundOn: true,
-  motionOn: true
-};
-
-const el = (id)=>document.getElementById(id);
-
-let state = loadState() || { ...DEFAULT_STATE };
+function save(){ saveState(state); }
 
 const audio = new AudioEngine();
-await audio.init();
 
-audio.setEnabled(state.soundOn);
-audio.setVolume(clamp01(parseFloat(el("volume").value)));
+let canvas, ctx;
+let rot = 0;
+let spinning = false;
 
-const wheel = new RouletteWheel(el("roulette"), audio);
-wheel.setSegments(buildWheel());
-
-function setStatus(msg){ el("statusLine").textContent = msg; }
-function pushLog(text, cls=""){
-  const line=document.createElement("p");
-  line.className="log-line " + cls;
-  line.textContent = `${nowTag()} ${text}`;
-  const log=el("log");
-  log.appendChild(line);
-  log.scrollTop = log.scrollHeight;
-}
 function toast(msg){
-  const t=el("toast");
-  t.textContent=msg;
-  t.hidden=false;
-  clearTimeout(toast._t);
-  toast._t=setTimeout(()=>{t.hidden=true}, 1200);
+  const t = $("toast");
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(()=>{ t.hidden = true; }, 1400);
 }
 
-function updateUI(){
-  el("cash").textContent = money(state.cash);
-  el("debt").textContent = money(state.debt);
-  el("boost").textContent = `x${state.boost}`;
-  el("streak").textContent = String(state.streak);
-  el("netWorth").textContent = money(state.cash - state.debt);
-
-  el("toggleSound").textContent = `SOUND: ${state.soundOn ? "ON":"OFF"}`;
-  el("toggleMotion").textContent = `MOTION: ${state.motionOn ? "ON":"OFF"}`;
-
-  const totalBet = readBets().total;
-  el("betTotal").textContent = money(totalBet);
-
-  el("loanHint").textContent = loanHint();
-
-  el("rulesText").textContent =
-`룰렛(25칸)
-20x 1 / 10x 3 / 3x 5 / 1 10(당첨=2배) / -2 5 / -10 1 / ★ 1(BOOST)
-
-베팅
-20/10/3/1에 각각 금액 입력.
-SPIN 누르면 총 베팅액 먼저 차감.
-당첨 숫자에 건 금액만 배수로 지급(BOOST 적용).
--2/-10은 총 베팅액 기준 추가 차감.
-★는 돈 변동 없이 BOOST만 x2 (연속= x4, x8...)
-
-대출
-현금 0pen일 때만 가능.
-최대 빚 100pen.
-33pen씩, 마지막 34pen.`;
+function log(msg, cls=""){
+  const box = $("logBox");
+  const p = document.createElement("div");
+  p.className = "logLine " + cls;
+  p.textContent = msg;
+  box.prepend(p);
 }
 
-function readBets(){
-  const b20 = Math.max(0, parseInt(el("bet20").value || "0",10) || 0);
-  const b10 = Math.max(0, parseInt(el("bet10").value || "0",10) || 0);
-  const b3  = Math.max(0, parseInt(el("bet3").value  || "0",10) || 0);
-  const b1  = Math.max(0, parseInt(el("bet1").value  || "0",10) || 0);
-  const total = b20+b10+b3+b1;
-  return { b20,b10,b3,b1,total };
+function updateBorrowButtons(){
+  $("borrowBtn").disabled = !(state.cash === 0 && state.debt < 100);
+  $("repayBtn").disabled  = !(state.debt > 0 && state.cash > 0);
 }
 
-function loanHint(){
-  const maxDebt=100;
-  const can = state.cash===0 && state.debt < maxDebt;
-  if(!can) return "현금이 0pen일 때만 대출 가능. (빚 100pen 한도)";
-  const remaining = maxDebt - state.debt;
-  const next = remaining<=34 ? remaining : 33;
-  return `지금 대출 가능: ${next}pen (남은 한도 ${remaining}pen)`;
-}
-
-function applyLoan(){
-  const maxDebt=100;
-  if(state.cash!==0){ toast("현금 0pen일 때만"); return; }
-  if(state.debt>=maxDebt){ toast("대출 한도 끝"); return; }
-  const remaining = maxDebt - state.debt;
-  const amt = remaining<=34 ? remaining : 33;
-  state.debt += amt;
-  state.cash += amt;
-  pushLog(`대출 +${amt}pen (빚 ${state.debt}pen)`, "event");
-  toast(`대출 +${amt}pen`);
-}
-
-function repayAll(){
-  if(state.debt<=0){ toast("빚 없음"); return; }
-  const pay = Math.min(state.cash, state.debt);
-  if(pay<=0){ toast("현금 없음"); return; }
-  state.cash -= pay;
-  state.debt -= pay;
-  pushLog(`상환 -${pay}pen (빚 ${state.debt}pen)`, "event");
-  toast(`상환 -${pay}pen`);
-}
-
-function fxPulse(type){
-  if(!state.motionOn) return;
-  document.body.classList.add("hitstop", "fx-"+type);
-  setTimeout(()=>document.body.classList.remove("hitstop"), 70);
-  setTimeout(()=>document.body.classList.remove("fx-"+type), 220);
-}
-
-let spinning=false;
-
-async function doSpin(){
-  if(spinning) return;
-  const bets = readBets();
-  if(bets.total<=0){ toast("베팅 먼저"); return; }
-  if(state.cash < bets.total){ toast("현금 부족"); return; }
-
-  spinning=true;
-
-  state.cash -= bets.total;
-  setStatus(`SPIN... (BET ${money(bets.total)})`);
-  pushLog(`BET ${money(bets.total)}`, "event");
-
-  const result = await wheel.spin({ duration: state.motionOn ? 3600 : 1600, minSpins: 7, maxSpins: 10 });
-  const seg = result.segment;
-
-  if(seg.kind==="boost"){
-    state.boost *= 2;
-    pushLog(`★ BOOST! 다음 결과 x${state.boost}`, "boost");
-    setStatus(`BOOST! 다음 결과 x${state.boost}`);
-    audio.play("boost");
-    fxPulse("boost");
-    state.cash = Math.max(0, state.cash);
-    saveState(state); updateUI();
-    spinning=false;
+function renderPlaced(){
+  const list = $("placedList");
+  list.innerHTML = "";
+  const entries = Object.entries(state.bets).filter(([,amt]) => amt > 0);
+  if (entries.length === 0){
+    const t = document.createElement("div");
+    t.style.color = "rgba(240,245,255,0.62)";
+    t.style.fontSize = "12px";
+    t.textContent = "비어 있음";
+    list.appendChild(t);
     return;
   }
+  for (const [key, amt] of entries){
+    const [, label] = key.split(":");
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.innerHTML = `<b>${label}</b><span>${amt}pen</span><button title="제거" aria-label="제거">×</button>`;
+    tag.querySelector("button").addEventListener("click", ()=>{
+      delete state.bets[key];
+      save(); updateHUD();
+    });
+    list.appendChild(tag);
+  }
+}
 
-  const boost = state.boost;
+function updateHUD(){
+  $("cash").textContent = String(state.cash);
+  $("debt").textContent = String(state.debt);
+  $("boost").textContent = "x" + String(state.boost);
+  renderPlaced();
+  updateBorrowButtons();
+}
 
-  if(seg.kind==="pos" || seg.kind==="pos1"){
-    let betOn=0, base=0;
-    if(seg.key==="20"){ betOn=bets.b20; base=betOn*20; }
-    if(seg.key==="10"){ betOn=bets.b10; base=betOn*10; }
-    if(seg.key==="3"){ betOn=bets.b3; base=betOn*3; }
-    if(seg.key==="1"){ betOn=bets.b1; base=betOn*2; }
+function renderBetOptions(){
+  const opts = buildBetOptions();
+  const grid = $("betGrid");
+  grid.innerHTML = "";
+  for (const o of opts){
+    const key = `${o.type}:${o.label}`;
+    const el = document.createElement("div");
+    el.className = "betItem";
+    el.dataset.key = key;
 
-    const boosted = Math.floor(base * boost);
-    state.cash += boosted;
+    const col = colorForKey(o.colorKey);
 
-    if(boosted>0){
-      state.streak += 1;
-      pushLog(`HIT ${seg.label} | +${money(boosted)} (on ${seg.key}: ${money(betOn)})`, "win");
-      setStatus(`HIT ${seg.label}! +${money(boosted)} (BOOST x${boost})`);
-      audio.play("win");
-      fxPulse("win");
-    }else{
-      state.streak = 0;
-      pushLog(`MISS ${seg.label}`, "lose");
-      setStatus(`MISS...`);
-      audio.play("lose");
-      fxPulse("lose");
+    el.innerHTML = `<div>
+        <div class="label">${o.label}</div>
+        <div class="hint">${o.hint}</div>
+      </div>
+      <div class="dot" aria-hidden="true"></div>`;
+    const dot = el.querySelector(".dot");
+    dot.style.width="10px"; dot.style.height="10px";
+    dot.style.borderRadius="999px";
+    dot.style.background=col;
+    dot.style.boxShadow=`0 0 14px ${col}`;
+
+    el.addEventListener("click", ()=>{
+      for (const n of grid.querySelectorAll(".betItem")) n.classList.remove("active");
+      el.classList.add("active");
+      state.lastPick = key;
+      save();
+      audio.playTick();
+    });
+
+    grid.appendChild(el);
+  }
+  const restore = state.lastPick || "mul:3";
+  const el = grid.querySelector(`[data-key="${restore}"]`);
+  if (el){
+    el.classList.add("active");
+    state.lastPick = restore;
+  }
+}
+
+function totalBet(){
+  return Object.values(state.bets).reduce((a,b)=>a+(b||0),0);
+}
+
+function placeBet(){
+  const key = state.lastPick;
+  if (!key){ toast("대상"); return; }
+  const amt = Number($("betAmount").value || 0);
+  if (!Number.isFinite(amt) || amt <= 0){ toast("금액"); return; }
+  if (amt > state.cash){ toast("현금 부족"); return; }
+  state.cash -= amt;
+  state.bets[key] = (state.bets[key]||0) + amt;
+  save(); updateHUD();
+  audio.playTick();
+}
+
+function clearBets(){
+  const refund = totalBet();
+  state.cash += refund;
+  state.bets = {};
+  save(); updateHUD();
+  toast("리셋");
+}
+
+function borrow(){
+  if (!(state.cash === 0 && state.debt < 100)) return;
+  const remaining = 100 - state.debt;
+  let amt = (state.loanCount === 0) ? 33 : (state.loanCount === 1) ? 33 : 34;
+  amt = Math.min(amt, remaining);
+  if (amt <= 0) return;
+
+  if (state.debt + amt >= 100){
+    toast("마지막 대출. 못 갚으면 몸으로 갚아야 한다.");
+    log("마지막 대출. 못 갚으면 몸으로 갚아야 한다.", "note");
+  }
+
+  state.cash += amt;
+  state.debt += amt;
+  state.loanCount = clamp(state.loanCount + 1, 0, 3);
+  save(); updateHUD();
+  log(`대출 +${amt}pen (DEBT ${state.debt})`, "note");
+  audio.playBoost();
+}
+
+function repay(){
+  if (!(state.debt > 0 && state.cash > 0)) return;
+  const amt = Math.min(state.cash, state.debt);
+  state.cash -= amt;
+  state.debt -= amt;
+  save(); updateHUD();
+  log(`상환 -${amt}pen (DEBT ${state.debt})`, "note");
+  audio.playTick();
+}
+
+function ensureCanvas(){
+  canvas = $("wheel");
+  ctx = canvas.getContext("2d");
+
+  const resize = () => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    drawWheel(ctx, rect.width, rect.height, rot);
+  };
+
+  const ro = new ResizeObserver(resize);
+  ro.observe(canvas);
+  window.addEventListener("orientationchange", ()=> setTimeout(resize, 150));
+  resize();
+}
+
+function animateTo(targetRot, durationMs){
+  const start = now();
+  const from = rot;
+  const delta = targetRot - from;
+  const ease = (t)=> 1 - Math.pow(1-t, 3);
+
+  spinning = true;
+  $("spinBtn").disabled = true;
+  $("status").textContent = "돌아간다.";
+  audio.playSpin();
+
+  const tickEvery = 70;
+  let nextTick = start;
+
+  return new Promise((resolve)=>{
+    const step = () => {
+      const t = (now()-start)/durationMs;
+      const k = ease(clamp(t,0,1));
+      rot = from + delta * k;
+
+      const rect = canvas.getBoundingClientRect();
+      drawWheel(ctx, rect.width, rect.height, rot);
+
+      const ts = now();
+      if (ts >= nextTick){
+        audio.playTick();
+        nextTick = ts + tickEvery * (0.5 + 0.9*(1-k));
+      }
+
+      if (t < 1) requestAnimationFrame(step);
+      else{
+        spinning = false;
+        $("spinBtn").disabled = false;
+        resolve();
+      }
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function settle(outcomeIdx){
+  const seg = SEGMENTS[outcomeIdx];
+  $("status").textContent = `${seg.label} 당첨`;
+
+  const key = `${seg.type}:${seg.label}`;
+  const bet = state.bets[key] || 0;
+
+  let delta = 0;
+
+  if (seg.type === "mul"){
+    delta += bet * seg.mult * state.boost;
+    if (bet > 0) log(`${seg.label} x${seg.mult} | +${bet*seg.mult*state.boost}pen`, "win");
+    else log(`${seg.label} x${seg.mult}`, "note");
+    state.boost = 1;
+  } else if (seg.type === "pen"){
+    if (bet > 0){
+      delta -= bet * seg.penalty;
+      log(`${seg.label} | -${bet*seg.penalty}pen`, "lose");
+    } else log(`${seg.label}`, "note");
+    state.boost = 1;
+  } else if (seg.type === "boost"){
+    state.boost *= seg.boost;
+    log(`BOOST x${state.boost}`, "note");
+    audio.playBoost();
+    if (bet > 0){
+      delta += bet * 2;
+      log(`★ 베팅 | +${bet*2}pen`, "win");
     }
-  }else if(seg.kind==="neg"){
-    const pen = Math.floor(bets.total * Math.abs(seg.mult) * boost);
-    state.cash = Math.max(0, state.cash - pen);
-    state.streak = 0;
-    pushLog(`${seg.label} TRAP | -${money(pen)} (BOOST x${boost})`, "lose");
-    setStatus(`${seg.label} TRAP... -${money(pen)}`);
-    audio.play("lose");
-    fxPulse("lose");
   }
 
-  state.boost = 1;
+  state.cash += delta;
+  if (state.cash < 0) state.cash = 0;
 
-  saveState(state);
-  updateUI();
-  spinning=false;
+  state.bets = {}; // clear bets each spin
+  save(); updateHUD();
+
+  if (delta > 0) audio.playWin();
+  else if (delta < 0) audio.playLose();
+  else audio.playTick();
 }
 
-function bind(){
-  el("spinBtn").addEventListener("click", doSpin);
-
-  el("toggleSound").addEventListener("click", ()=>{
-    state.soundOn = !state.soundOn;
-    audio.setEnabled(state.soundOn);
-    saveState(state); updateUI();
-  });
-  el("toggleMotion").addEventListener("click", ()=>{
-    state.motionOn = !state.motionOn;
-    saveState(state); updateUI();
-  });
-
-  el("volume").addEventListener("input", (e)=>{
-    audio.setVolume(clamp01(parseFloat(e.target.value)));
-  });
-
-  for(const id of ["bet20","bet10","bet3","bet1"]){
-    el(id).addEventListener("input", ()=>{ updateUI(); });
+async function spin(){
+  if (spinning) return;
+  if (Object.keys(state.bets).length === 0){
+    toast("베팅 먼저");
+    return;
   }
-
-  el("borrowBtn").addEventListener("click", ()=>{
-    el("loanModal").hidden=false;
-    updateUI();
-  });
-  el("loanClose").addEventListener("click", ()=>{ el("loanModal").hidden=true; });
-  el("loanConfirm").addEventListener("click", ()=>{
-    applyLoan();
-    el("loanModal").hidden=true;
-    saveState(state); updateUI();
-  });
-
-  el("repayBtn").addEventListener("click", ()=>{
-    repayAll();
-    saveState(state); updateUI();
-  });
-
-  el("loanModal").addEventListener("click", (e)=>{
-    if(e.target===el("loanModal")) el("loanModal").hidden=true;
-  });
+  const plan = spinPlan();
+  await animateTo(rot + plan.finalRot, plan.durationMs);
+  settle(plan.idx);
 }
 
-bind();
-updateUI();
+function hook(){
+  $("placeBtn").addEventListener("click", placeBet);
+  $("clearBtn").addEventListener("click", clearBets);
+  $("spinBtn").addEventListener("click", spin);
+  $("borrowBtn").addEventListener("click", borrow);
+  $("repayBtn").addEventListener("click", repay);
+
+  $("soundBtn").addEventListener("click", async ()=>{
+    await audio.init();
+    await audio.resume();
+    audio.enabled = !audio.enabled;
+    $("soundBtn").textContent = audio.enabled ? "SOUND: ON" : "SOUND: OFF";
+    audio.playTick();
+  });
+
+  $("betAmount").addEventListener("keydown", (e)=>{
+    if (e.key === "Enter") placeBet();
+  });
+
+  for (const b of document.querySelectorAll("button")){
+    b.addEventListener("touchend", ()=>{}, {passive:true});
+  }
+}
+
+(async function main(){
+  ensureCanvas();
+  renderBetOptions();
+  updateHUD();
+  hook();
+  await audio.init();
+  log("READY", "note");
+})();

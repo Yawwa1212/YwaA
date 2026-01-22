@@ -2,115 +2,88 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>GANG WON LAND</title>
   <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="effects.css" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#07070c" />
 </head>
-<body class="mood-vegas">
-  <div class="fx fx-sparkle" aria-hidden="true"></div>
-  <div class="fx fx-marquee" aria-hidden="true"></div>
+<body>
+  <div class="fx fx-noise" aria-hidden="true"></div>
+  <div class="fx fx-scan" aria-hidden="true"></div>
 
-  <header class="topbar">
+  <header class="top">
     <div class="brand">
-      <div class="brand-title">GANG WON LAND</div>
-      <div class="brand-sub">las vegas • neon roulette • debt</div>
+      <div class="title">GANG WON LAND</div>
+      <div class="sub">roulette • pen • vegas neon</div>
     </div>
-    <div class="topbar-right">
-      <div class="meter" title="현재 자산(현금-빚)">
-        <div class="meter-label">NET</div>
-        <div class="meter-value" id="netWorth">0pen</div>
-      </div>
-      <button class="ghost" id="toggleSound" type="button">SOUND: ON</button>
-      <button class="ghost" id="toggleMotion" type="button">MOTION: ON</button>
+    <div class="hud">
+      <div class="pill"><span class="k">CASH</span><span class="v" id="cash">30</span></div>
+      <div class="pill"><span class="k">DEBT</span><span class="v" id="debt">0</span></div>
+      <div class="pill"><span class="k">BOOST</span><span class="v" id="boost">x1</span></div>
+      <button class="ghost" id="soundBtn" type="button">SOUND: ON</button>
     </div>
   </header>
 
-  <main class="shell">
-    <section class="panel wheel-panel">
-      <div class="wheel-header">
-        <div class="wheel-title">ROULETTE CORE</div>
-        <div class="wheel-status" id="statusLine">베팅하고 SPIN.</div>
+  <main class="wrap">
+    <section class="card wheelCard">
+      <div class="wheelHead">
+        <div class="wheelTitle">ROULETTE</div>
+        <div class="wheelStatus" id="status">베팅하고 SPIN.</div>
       </div>
 
-      <div class="wheel-stage">
+      <div class="wheelStage">
         <div class="pointer" aria-hidden="true"></div>
-        <canvas id="roulette" width="520" height="520" aria-label="룰렛"></canvas>
-        <button class="spin-center" id="spinBtn" type="button">SPIN</button>
+        <canvas id="wheel" aria-label="룰렛"></canvas>
+        <div class="spinGlow" aria-hidden="true"></div>
       </div>
 
-      <div class="betbox">
-        <div class="bethead">
-          <div class="bet-title">BET MAP</div>
-          <div class="bet-total">TOTAL: <span id="betTotal">0pen</span></div>
-        </div>
+      <div class="actions">
+        <button class="spin" id="spinBtn" type="button">SPIN</button>
+        <button class="ghost" id="borrowBtn" type="button">대출</button>
+        <button class="ghost" id="repayBtn" type="button">상환</button>
+      </div>
 
-        <div class="betgrid">
-          <label class="bet bet-20">
-            <span class="bet-k">20x</span>
-            <input id="bet20" type="number" min="0" step="1" value="0" />
-          </label>
-          <label class="bet bet-10">
-            <span class="bet-k">10x</span>
-            <input id="bet10" type="number" min="0" step="1" value="0" />
-          </label>
-          <label class="bet bet-3">
-            <span class="bet-k">3x</span>
-            <input id="bet3" type="number" min="0" step="1" value="0" />
-          </label>
-          <label class="bet bet-1">
-            <span class="bet-k">1 (2x)</span>
-            <input id="bet1" type="number" min="0" step="1" value="0" />
-          </label>
-        </div>
-
-        <div class="actions">
-          <button class="secondary" id="borrowBtn" type="button">대출</button>
-          <button class="secondary" id="repayBtn" type="button">상환</button>
-          <label class="vol">
-            <span>VOL</span>
-            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65" />
-          </label>
-        </div>
-
-        <div class="rules">
-          <div class="rules-title">RULES</div>
-          <div class="rules-body" id="rulesText"></div>
+      <div class="rules" id="rules">
+        <div class="rulesTitle">RULES</div>
+        <div class="rulesText">
+          • 시작자금 30pen. 이자 없음.<br/>
+          • 대출은 cash=0일 때만 가능. 최대 100pen (33,33,34).<br/>
+          • 1칸은 2배 지급.<br/>
+          • ★는 BOOST: 다음 당첨금에 x2 (연속이면 x4, x8...).<br/>
+          • -2 / -10은 해당 칸에 건 금액만큼 추가 차감.
         </div>
       </div>
     </section>
 
-    <section class="panel stats-panel">
-      <div class="stats">
-        <div class="stat"><div class="k">현금</div><div class="v" id="cash">0pen</div></div>
-        <div class="stat"><div class="k">빚</div><div class="v" id="debt">0pen</div></div>
-        <div class="stat"><div class="k">BOOST</div><div class="v" id="boost">x1</div></div>
-        <div class="stat"><div class="k">연승</div><div class="v" id="streak">0</div></div>
+    <section class="card betCard">
+      <div class="betHead">
+        <div class="betTitle">BET</div>
+        <div class="betSub">숫자/기능을 고르고 금액을 건다.</div>
       </div>
 
-      <div class="log-card">
-        <div class="card-title">로그</div>
-        <div class="log" id="log"></div>
+      <div class="betGrid" id="betGrid"></div>
+
+      <div class="betRow">
+        <label class="field">
+          <span>금액</span>
+          <input id="betAmount" type="number" inputmode="numeric" min="1" step="1" value="5" />
+        </label>
+        <button class="primary" id="placeBtn" type="button">걸기</button>
+        <button class="ghost" id="clearBtn" type="button">리셋</button>
+      </div>
+
+      <div class="placed">
+        <div class="placedTitle">PLACED</div>
+        <div class="placedList" id="placedList"></div>
+      </div>
+
+      <div class="log">
+        <div class="logTitle">LOG</div>
+        <div class="logBox" id="logBox"></div>
       </div>
     </section>
   </main>
-
-  <div class="modal" id="loanModal" role="dialog" aria-modal="true" hidden>
-    <div class="modal-card">
-      <div class="modal-head">
-        <div class="modal-title" id="loanTitle">대출</div>
-        <button class="ghost" id="loanClose" type="button">닫기</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted" id="loanHint"></p>
-        <div class="row">
-          <button class="primary" id="loanConfirm" type="button">대출 받기</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="toast" id="toast" hidden></div>
 
