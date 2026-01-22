@@ -28,7 +28,16 @@ function makeSegments() {
   return segs;
 }
 
-export const DEFAULT_SEGMENTS = makeSegments();
+
+function shuffleInPlace(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = (Math.random()*(i+1))|0;
+    const t = arr[i]; arr[i]=arr[j]; arr[j]=t;
+  }
+  return arr;
+}
+
+export const DEFAULT_SEGMENTS = shuffleInPlace(makeSegments());
 
 function pickWeighted(segments) {
   const items = segments || [];
@@ -125,7 +134,7 @@ export class Roulette {
       const mid = (a0 + a1) / 2;
       ctx.save();
       ctx.rotate(mid);
-      ctx.translate(0, -r * 0.74);
+      ctx.translate(0, -r * 0.62);
       ctx.rotate(-mid);
 
       const fs = (n >= 30) ? 10 : 12;
