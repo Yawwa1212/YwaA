@@ -143,20 +143,20 @@ export class AudioEngine {
     // Fallback synthesized
     if (name === "tick") {
       // Mechanical click (no "cartoon" beep)
-      this._noiseShot(t, 0.055, 0.14, 1400);
+      this._noiseShot(t, 0.050, 0.12, 900);
 
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       const lp = this.ctx.createBiquadFilter();
       lp.type = "lowpass";
-      lp.frequency.setValueAtTime(1800, t);
+      lp.frequency.setValueAtTime(1200, t);
 
       o.type = "triangle";
-      o.frequency.setValueAtTime(240 + Math.random() * 20, t);
-      o.frequency.exponentialRampToValueAtTime(170, t + 0.04);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.055, t + 0.006);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      o.frequency.setValueAtTime(190 + Math.random() * 15, t);
+      o.frequency.exponentialRampToValueAtTime(130, t + 0.045);
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.070);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.070);
       o.connect(lp); lp.connect(g); g.connect(out);
       o.start(t); o.stop(t + 0.08);
       return;
@@ -174,7 +174,7 @@ export class AudioEngine {
       g.gain.exponentialRampToValueAtTime(0.22, t + 0.012);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
       o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.20);
+      o.start(t); o.stop(t + 0.16);
       return;
     }
 

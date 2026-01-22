@@ -19,7 +19,7 @@
     <div class="topbar-right">
       <div class="meter" title="현재 자산(현금-빚)">
         <div class="meter-label">NET</div>
-        <div class="meter-value" id="netWorth">₩0</div>
+        <div class="meter-value" id="netWorth">300pen</div>
       </div>
       <button class="ghost" id="toggleSound" type="button">SOUND: ON</button>
       <button class="ghost" id="toggleMotion" type="button">MOTION: ON</button>
@@ -30,7 +30,7 @@
     <section class="panel wheel-panel">
       <div class="wheel-header">
         <div class="wheel-title">ROULETTE CORE</div>
-        <div class="wheel-status" id="statusLine">레버를 당겨라.</div>
+        <div class="wheel-status" id="statusLine">베팅하고 SPIN.</div>
       </div>
 
       <div class="wheel-stage">
@@ -52,28 +52,55 @@
           <div class="pull-label" id="pullLabel" aria-hidden="true">PULL!</div>
         </div>
 
-        <div class="controls">
-          <div class="row">
-            <label class="field">
-              <span>BET</span>
-              <input id="bet" type="number" inputmode="numeric" min="0" step="1000" value="10000" />
-            </label>
-            <button class="primary" id="spinBtn" type="button">SPIN</button>
-          </div>
+        
+          <div class="controls">
+            <div class="betbox">
+              <div class="bethead">
+                <div class="bettitle">BET MAP</div>
+                <div class="bettotal" id="betTotal">TOTAL: 0pen</div>
+              </div>
 
-          <div class="row">
-            <button class="secondary" id="borrowBtn" type="button">대출</button>
-            <button class="secondary" id="repayBtn" type="button">상환</button>
-          </div>
+              <div class="betgrid" aria-label="베팅">
+                <label class="betrow">
+                  <span class="bkey">20</span>
+                  <input id="bet20" type="number" inputmode="numeric" min="0" step="1" value="0" />
+                </label>
+                <label class="betrow">
+                  <span class="bkey">10</span>
+                  <input id="bet10" type="number" inputmode="numeric" min="0" step="1" value="0" />
+                </label>
+                <label class="betrow">
+                  <span class="bkey">5</span>
+                  <input id="bet5" type="number" inputmode="numeric" min="0" step="1" value="0" />
+                </label>
+                <label class="betrow">
+                  <span class="bkey">3</span>
+                  <input id="bet3" type="number" inputmode="numeric" min="0" step="1" value="0" />
+                </label>
+                <label class="betrow">
+                  <span class="bkey">1</span>
+                  <input id="bet1" type="number" inputmode="numeric" min="0" step="1" value="0" />
+                </label>
+              </div>
 
-          <div class="row slim">
-            <label class="field inline">
-              <span>VOL</span>
-              <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" />
-            </label>
-            <div class="pill" id="moodPill">MOOD</div>
+              <div class="row">
+                <button class="primary" id="spinBtn" type="button">SPIN</button>
+              </div>
+
+              <div class="row">
+                <button class="secondary" id="borrowBtn" type="button">대출</button>
+                <button class="secondary" id="repayBtn" type="button">상환</button>
+              </div>
+
+              <div class="row slim">
+                <label class="field inline">
+                  <span>VOL</span>
+                  <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" />
+                </label>
+              </div>
+            </div>
           </div>
-        </div>
+</div>
       </div>
     </section>
 
@@ -81,25 +108,17 @@
       <div class="stats">
         <div class="stat">
           <div class="k">현금</div>
-          <div class="v" id="cash">₩1,000,000</div>
+          <div class="v" id="cash">300pen</div>
         </div>
         <div class="stat">
           <div class="k">빚</div>
-          <div class="v" id="debt">₩0</div>
+          <div class="v" id="debt">0pen</div>
         </div>
-        <div class="stat">
-          <div class="k">이자</div>
-          <div class="v" id="interest">0%</div>
-        </div>
-        <div class="stat">
+<div class="stat">
           <div class="k">연승</div>
           <div class="v" id="streak">0</div>
         </div>
-        <div class="stat">
-          <div class="k">부패</div>
-          <div class="v" id="corruption">0</div>
-        </div>
-      </div>
+</div>
 
       <div class="organs-card">
         <div class="card-title">장기 재고</div>
@@ -126,28 +145,19 @@
       </div>
 
       <div class="modal-body">
-        <p class="muted" id="loanHint">최대 3천만원까지. 대출할 때만 사채업자가 나타난다.</p>
+        <p class="muted" id="loanHint">PEN을 다 탕진해야 대출 가능. 총 한도 1000pen (333/333/334). 마지막 대출은 경고가 뜬다.</p>
         <label class="field">
-          <span id="loanAmountLabel">대출 금액</span>
-          <input id="loanAmount" type="number" inputmode="numeric" min="0" step="100000" value="1000000" />
+          <span id="loanAmountLabel">금액</span>
+          <input id="loanAmount" type="number" inputmode="numeric" min="0" step="100000" value="0" />
         </label>
 
         <div class="row">
           <button class="primary" id="loanConfirm" type="button">확인</button>
         </div>
-
-        <div class="loanShark" id="loanShark" hidden>
-          <div class="shark-title">사채업자 이벤트</div>
-          <p class="muted" id="sharkText">"규칙을 바꿔. 지금."</p>
-          <div class="row">
-            <button class="secondary" id="sharkDeal" type="button">딜</button>
-            <button class="secondary" id="sharkSqueeze" type="button">갈아넣기</button>
-            <button class="danger" id="sharkRefuse" type="button">거절</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
+
 
   <div class="modal" id="organModal" role="dialog" aria-modal="true" aria-labelledby="organTitle" hidden>
     <div class="modal-card">

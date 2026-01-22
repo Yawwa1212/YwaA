@@ -10,16 +10,25 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-export const DEFAULT_SEGMENTS = [
-  // Profit multipliers:
-  // totalReturn = bet + bet*mult
-  { key: "BUST",    label: "BUST",    kind: "mult", mult: -1, weight: 26 },
-  { key: "PUSH",    label: "PUSH",    kind: "mult", mult:  0, weight: 18 },
-  { key: "ONE",     label: "1X",      kind: "mult", mult:  1, weight: 24 },
-  { key: "TWO",     label: "2X",      kind: "mult", mult:  2, weight: 12 },
-  { key: "THREE",   label: "3X",      kind: "mult", mult:  3, weight:  6 },
-  { key: "JACKPOT", label: "JACKPOT", kind: "mult", mult: 12, weight:  2 }
-];
+// Slots (more lines): 36 wedges
+// 20: 1 slot (very rare)
+// 10/5/3/1: distributed for readable probability
+// Note: "1" pays 2x total return (user rule)
+function makeSegments() {
+  const segs = [];
+  const pushN = (key, label, payout, n) => {
+    for (let i = 0; i < n; i++) segs.push({ key, label, kind: "payout", payout });
+  };
+
+  pushN("20", "20", 20, 1);
+  pushN("10", "10", 10, 3);
+  pushN("5",  "5",   5, 5);
+  pushN("3",  "3",   3, 9);
+  pushN("1",  "1",   2, 18); // 1 => 2x
+  return segs;
+}
+
+export const DEFAULT_SEGMENTS = makeSegments();
 
 function pickWeighted(segments) {
   const items = segments || [];
@@ -40,8 +49,10 @@ export class Roulette {
     this.ctx = canvas.getContext("2d");
     this.audio = audio;
     this.segments = segments.slice();
+
     this.rot = 0;
     this.spinning = false;
+
     this._lastIndex = 0;
     this._lastTickAt = 0;
     this.draw();
@@ -71,26 +82,25 @@ export class Roulette {
 
     // Outer ring
     ctx.save();
+    ctx.translate(cx, cy);
+
     ctx.beginPath();
-    ctx.arc(cx, cy, r + 6, 0, TAU);
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.arc(0, 0, r * 1.03, 0, TAU);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.restore();
 
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(this.rot);
-
-    const seg = TAU / this.segments.length;
+    const n = this.segments.length;
+    const seg = TAU / n;
     const start = -Math.PI / 2;
 
-    for (let i = 0; i < this.segments.length; i++) {
+    for (let i = 0; i < n; i++) {
       const s = this.segments[i];
       const a0 = start + i * seg;
       const a1 = a0 + seg;
-      const isJackpot = s.key === "JACKPOT";
-      const isBust = s.key === "BUST";
+      const isJackpot = s.key === "20";
 
       // Wedge
       ctx.beginPath();
@@ -98,26 +108,25 @@ export class Roulette {
       ctx.arc(0, 0, r, a0, a1);
       ctx.closePath();
 
-      let fill = (i % 2 === 0) ? "#0a0a0a" : "#111";
-      if (isBust) fill = "#050505";
+      let fill = (i % 2 === 0) ? "#070707" : "#0c0c0c";
       if (isJackpot) fill = "#fff";
-
       ctx.fillStyle = fill;
       ctx.fill();
 
-      ctx.strokeStyle = "rgba(255,255,255,0.22)";
-      ctx.lineWidth = 2;
+      // Lines (lots)
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      // Label
+      // Label (small, minimal)
       const mid = (a0 + a1) / 2;
       ctx.save();
       ctx.rotate(mid);
-      ctx.translate(0, -r * 0.72);
+      ctx.translate(0, -r * 0.74);
       ctx.rotate(-mid);
-      ctx.font = isJackpot
-        ? "900 15px ui-monospace, Menlo, Consolas, Courier New, monospace"
-        : "900 14px ui-monospace, Menlo, Consolas, Courier New, monospace";
+
+      const fs = (n >= 30) ? 10 : 12;
+      ctx.font = `900 ${fs}px ui-monospace, Menlo, Consolas, Courier New, monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = isJackpot ? "#000" : "rgba(255,255,255,0.92)";
@@ -130,30 +139,21 @@ export class Roulette {
     ctx.arc(0, 0, r * 0.22, 0, TAU);
     ctx.fillStyle = "#000";
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.42)";
+    ctx.strokeStyle = "rgba(255,255,255,0.65)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.font = "900 15px ui-monospace, Menlo, Consolas, Courier New, monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.fillText("GWL", 0, 1);
+    // Hub ticks
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.14, 0, TAU);
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
-    ctx.restore();
-
-    // Soft vignette (very subtle)
-    ctx.save();
-    ctx.globalAlpha = 0.10;
-    const grd = ctx.createRadialGradient(cx, cy, r * 0.25, cx, cy, r * 1.15);
-    grd.addColorStop(0, "rgba(0,0,0,0)");
-    grd.addColorStop(1, "rgba(0,0,0,1)");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, w, h);
     ctx.restore();
   }
 
-  async spin({ duration = 2800, minSpins = 6, maxSpins = 9 } = {}) {
+  async spin({ duration = 2400, minSpins = 6, maxSpins = 9 } = {}) {
     if (this.spinning) return null;
     this.spinning = true;
 
@@ -178,20 +178,21 @@ export class Roulette {
         const t = Math.min(1, (now - t0) / duration);
         const e = easeOutCubic(t);
 
-        // tiny wobble (kept minimal)
-        const wobble = this.spinning ? Math.sin(now / 110) * 0.0012 : 0;
+        // subtle wobble
+        const wobble = this.spinning ? Math.sin(now / 130) * 0.0010 : 0;
 
         this.rot = startRot + (endRot - startRot) * e + wobble;
         this.draw();
 
+        // Tick on wedge boundaries
         const idx = this.getIndexAtPointer(this.rot);
         if (idx !== this._lastIndex) {
           this._lastIndex = idx;
-          const canTick = now - (this._lastTickAt || 0) > 38;
-          if (canTick) {
-            this._lastTickAt = now;
-            if (this.audio && typeof this.audio.play === "function") {
+          if (this.audio && typeof this.audio.play === "function") {
+            const since = now - (this._lastTickAt || 0);
+            if (since > 28) { // limit tick spam
               this.audio.play("tick");
+              this._lastTickAt = now;
             }
           }
         }
