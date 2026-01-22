@@ -3,11 +3,11 @@ import { AudioEngine } from "./audio.js";
 import { AnatomyOverlay, ORGANS } from "./anatomy.js";
 import { Storage } from "./storage.js";
 
-const KEY = "gwl_v3_minimal_bw_rules_v1";
-const MAX_DEBT = 1000;
-const LOAN_CHUNK = 333;
-const LAST_LOAN_CHUNK = 334;
-const ORGAN_LOAN = 200;
+const KEY = "gwl_v3_minimal_bw_rules_v2";
+const MAX_DEBT = 100;
+const LOAN_CHUNK = 33;
+const LAST_LOAN_CHUNK = 34;
+const ORGAN_LOAN = 20;
 
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
@@ -66,7 +66,7 @@ const el = {
 };
 
 const DEFAULT_STATE = {
-  cash: 300,
+  cash: 30,
   debt: 0,
   streak: 0,
   soundOn: true,

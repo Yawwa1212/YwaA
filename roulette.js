@@ -10,8 +10,8 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-// Slots (more lines): 36 wedges
-// 20: 1 slot (very rare)
+// Slots: 12 wedges (no blanks)
+// 20: 1 slot (rare)
 // 10/5/3/1: distributed for readable probability
 // Note: "1" pays 2x total return (user rule)
 function makeSegments() {
@@ -21,10 +21,10 @@ function makeSegments() {
   };
 
   pushN("20", "20", 20, 1);
-  pushN("10", "10", 10, 3);
-  pushN("5",  "5",   5, 5);
-  pushN("3",  "3",   3, 9);
-  pushN("1",  "1",   2, 18); // 1 => 2x
+  pushN("10", "10", 10, 2);
+  pushN("5",  "5",   5, 2);
+  pushN("3",  "3",   3, 3);
+  pushN("1",  "1",   2, 4); // 1 => 2x
   return segs;
 }
 
@@ -137,7 +137,7 @@ export class Roulette {
       ctx.translate(0, -r * 0.62);
       ctx.rotate(-mid);
 
-      const fs = (n >= 30) ? 10 : 12;
+      const fs = (n >= 30) ? 10 : (n >= 20 ? 12 : 16);
       ctx.font = `900 ${fs}px ui-monospace, Menlo, Consolas, Courier New, monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
